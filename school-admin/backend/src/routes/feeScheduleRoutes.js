@@ -1,0 +1,50 @@
+const express = require('express');
+const { body, param } = require('express-validator');
+const FeeSchedule = require('../models/FeeSchedule');
+const { protect, adminOnly, staffOnly } = require('../middlewares/auth');
+const validate = require('../middlewares/validate');
+
+const router = express.Router();
+router.use(protect);
+
+router.get('/', staffOnly, async (req, res, next) => {
+  try {
+    const schedules = await FeeSchedule.find({ isActive: true })
+      .populate('classes', 'name')
+      .sort({ dueDate: 1 });
+    res.json({ success: true, data: schedules });
+  } catch (err) { next(err); }
+});
+
+router.post('/', adminOnly,
+  [
+    body('name').trim().notEmpty(),
+    body('amount').isFloat({ min: 0 }),
+    body('dueDate').isISO8601(),
+    body('academicYear').trim().notEmpty(),
+  ],
+  validate,
+  async (req, res, next) => {
+    try {
+      const schedule = await FeeSchedule.create(req.body);
+      res.status(201).json({ success: true, data: schedule });
+    } catch (err) { next(err); }
+  }
+);
+
+router.put('/:id', adminOnly, [param('id').isMongoId()], validate, async (req, res, next) => {
+  try {
+    const s = await FeeSchedule.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!s) return res.status(404).json({ success: false, message: 'Schedule not found' });
+    res.json({ success: true, data: s });
+  } catch (err) { next(err); }
+});
+
+router.delete('/:id', adminOnly, [param('id').isMongoId()], validate, async (req, res, next) => {
+  try {
+    await FeeSchedule.findByIdAndUpdate(req.params.id, { isActive: false });
+    res.json({ success: true, message: 'Fee schedule removed.' });
+  } catch (err) { next(err); }
+});
+
+module.exports = router;
