@@ -21,38 +21,23 @@ const cors = require('cors');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
-// ── Database Connection ───────────────────────────────────────────────────────
 const connectDB = require('./config/db');
 
-// ── Route Imports ─────────────────────────────────────────────────────────────
-// Authentication & Profile
+const swaggerUi   = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
 const authRoutes          = require('./routes/authRoutes');           // Login, register, profile
 const passwordResetRoutes = require('./routes/passwordResetRoutes');   // Password reset flows
-
-// Financial Management
 const feeRoutes           = require('./routes/feeRoutes');            // Fee balance, deposits, withdrawals
-
-// Academic Information
 const academicRoutes      = require('./routes/academicRoutes');       // Grades, attendance, timetable
-
-// Parent-Student Linking
 const linkingRoutes       = require('./routes/linkingRoutes');        // Linking requests
 
-// ── Middleware Imports ────────────────────────────────────────────────────────
 const errorHandler        = require('./middlewares/errorHandler');    // Global error handler
 
-// ── Initialize Express App ────────────────────────────────────────────────────
 const app = express();
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SECURITY & PROTECTION MIDDLEWARE
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Apply security headers (prevent XSS, clickjacking, etc.)
 app.use(helmet());
 
-// Configure Cross-Origin Resource Sharing
-// Allows requests from client frontend only
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || 'http://localhost:3000',
@@ -60,12 +45,7 @@ app.use(
   })
 );
 
-// ══════════════════════════════════════════════════════════════════════════════
-// RATE LIMITING - BRUTE FORCE PROTECTION
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Limits each IP to 100 requests per 15 minutes
-// Stricter than admin API to protect user accounts
+// Rate limiting protects sign-in and payment endpoints from brute-force abuse.
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,  // 15 minutes
   max:      Number(process.env.RATE_LIMIT_MAX) || 100,                   // 100 requests
@@ -75,65 +55,30 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ══════════════════════════════════════════════════════════════════════════════
-// BODY PARSING MIDDLEWARE
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Parse JSON request bodies (10MB limit for file uploads)
 app.use(express.json({ limit: '10mb' }));
-
-// Parse URL-encoded form data
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// ══════════════════════════════════════════════════════════════════════════════
-// LOGGING MIDDLEWARE
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Log all HTTP requests in development environment (skip in tests)
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// HEALTH CHECK ENDPOINT
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Used by Docker and load balancers to verify API is running
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'school-client-api' }));
 
-// ══════════════════════════════════════════════════════════════════════════════
-// API ROUTES
-// ══════════════════════════════════════════════════════════════════════════════
+// Swagger UI exposes the client API contract for testing and handoff.
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'School Client API Docs',
+  customCss: '.swagger-ui .topbar { background-color: #0f172a; }',
+}));
 
-// Authentication routes (register, login, profile)
 app.use('/api/auth',     authRoutes);
-
-// Password recovery routes
 app.use('/api/auth',     passwordResetRoutes);
-
-// Fee management routes (balance, history, payments)
 app.use('/api/fees',     feeRoutes);
-
-// Academic records routes (grades, attendance, timetable)
 app.use('/api/academic', academicRoutes);
-
-// Parent-student linking routes
 app.use('/api/linking',  linkingRoutes);
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ERROR HANDLING MIDDLEWARE
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Handle 404 - Route not found
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
-
-// Global error handler (catches all errors from routes and controllers)
 app.use(errorHandler);
 
-// ── Global error handler ──────────────────────────────────────────────────────
-app.use(errorHandler);
-
-// ── Start server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5001;
 
 const start = async () => {
