@@ -7,6 +7,7 @@ import {
 import { logout } from '../services/authService'
 import { getStoredUser } from '../utils/auth'
 
+// Shared shell for authenticated client pages.
 const navItems = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/fees',         icon: CreditCard,      label: 'Fees' },
