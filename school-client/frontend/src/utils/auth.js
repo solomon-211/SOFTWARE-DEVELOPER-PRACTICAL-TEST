@@ -1,11 +1,11 @@
-// Helpers for reading auth state from localStorage.
-// Kept simple — components should call these instead of touching localStorage directly.
+// Helpers for reading auth state from session storage.
+// Keep components here instead of touching storage directly.
 export const getStoredUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('user'));
+    return JSON.parse(sessionStorage.getItem('user'));
   } catch {
     return null;
   }
 };
 
-export const isAuthenticated = () => !!localStorage.getItem('token');
+export const isAuthenticated = () => !!sessionStorage.getItem('token');
