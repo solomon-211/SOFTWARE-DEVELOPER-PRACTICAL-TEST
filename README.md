@@ -110,17 +110,29 @@ school-management-system/
 | Layer | Technology | Version |
 | ----- | ----------- | ------- |
 | **Frontend** | React.js | ^18.3.1 |
-| **Frontend State** | React Query | ^5.40.0 |
-| **Frontend UI** | Lucide React, Recharts | Latest |
-| **Backend** | Node.js | ^20 |
-| **Framework** | Express.js | ^4.19.2 |
+| **Frontend Routing** | React Router DOM | ^6.23.1 |
+| **Frontend State** | TanStack React Query | ^5.40.0 |
+| **Frontend Charts** | Recharts | ^2.12.7 |
+| **Frontend Icons** | Lucide React | ^1.14.0 |
+| **HTTP Client** | Axios | ^1.7.2 |
+| **Build Tool** | Vite | ^5.3.1 |
+| **Backend Runtime** | Node.js | ^20 |
+| **Backend Framework** | Express.js | ^4.19.2 |
 | **Database** | MongoDB | 7.0 |
-| **ORM** | Mongoose | ^8.4.1 |
-| **Authentication** | JWT, SHA-512 | Latest |
-| **Security** | Helmet.js, express-rate-limit | Latest |
+| **ODM** | Mongoose | ^8.4.1 |
+| **Authentication** | JSON Web Tokens (JWT) | ^9.0.2 |
+| **Password Hashing** | bcryptjs | ^2.4.3 |
+| **Security Headers** | Helmet.js | ^7.1.0 |
+| **Rate Limiting** | express-rate-limit | ^7.3.1 |
 | **Validation** | express-validator | ^7.1.0 |
-| **Testing** | Jest, Supertest | ^29.7.0 |
-| **Containerization** | Docker, Docker Compose | Latest |
+| **Email** | Nodemailer | ^8.0.7 |
+| **File Uploads** | Multer | ^2.1.1 |
+| **Image Storage** | Cloudinary | ^2.10.0 |
+| **Logging** | Morgan | ^1.10.0 |
+| **Testing** | Jest + Supertest | ^29.7.0 |
+| **Dev Server** | Nodemon | ^3.1.3 |
+| **Containerization** | Docker + Docker Compose | Latest |
+| **Web Server** | Nginx | Latest |
 
 ## Prerequisites
 
