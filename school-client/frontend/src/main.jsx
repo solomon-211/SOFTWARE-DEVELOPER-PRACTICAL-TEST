@@ -3,15 +3,45 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
+import { logout } from './services/authService'
 import './styles/global.css'
+
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000
+
+// Idle timeout keeps the client session short-lived and clears auth on inactivity.
+function SessionExpiryWatcher() {
+  React.useEffect(() => {
+    let timerId
+
+    const resetTimer = () => {
+      window.clearTimeout(timerId)
+      timerId = window.setTimeout(() => {
+        if (sessionStorage.getItem('token')) {
+          logout()
+        }
+      }, IDLE_TIMEOUT_MS)
+    }
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
+    events.forEach((eventName) => window.addEventListener(eventName, resetTimer))
+    resetTimer()
+
+    return () => {
+      events.forEach((eventName) => window.removeEventListener(eventName, resetTimer))
+      window.clearTimeout(timerId)
+    }
+  }, [])
+
+  return null
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 0,              // always consider data stale — refetch on every mount
-      refetchOnWindowFocus: true, // refetch when user switches back to the tab
-      refetchInterval: 30000,    // poll every 30 seconds automatically
+      staleTime: 0,
+      refetchOnWindowFocus: true,
+      refetchInterval: 30000,
     },
   },
 })
@@ -20,6 +50,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <SessionExpiryWatcher />
         <App />
       </BrowserRouter>
     </QueryClientProvider>
