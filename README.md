@@ -38,8 +38,7 @@ school-management-system/
 │   │   ├── nginx.conf
 │   │   └── package.json
 │   ├── docker-compose.yml
-│   ├── README.md
-│   └── .env.example
+│   └── backend/.env.example
 │
 ├── school-client/                # Parent/Student portal
 │   ├── backend/                  # Node.js/Express API
@@ -60,8 +59,7 @@ school-management-system/
 │   │   ├── nginx.conf
 │   │   └── package.json
 │   ├── docker-compose.yml
-│   ├── README.md
-│   └── .env.example
+│   └── backend/.env.example
 │
 ├── API_DOCUMENTATION.md          # Complete API reference
 └── README.md                      # This file
@@ -506,7 +504,7 @@ The project was completed from a near-finished state to full compliance with the
 
 ### Completed Work
 
-- Added `.env.example` files for both applications
+- Added backend `.env.example` files for both applications
 - Added Jest configuration and 26 test cases across authentication, devices, and students
 - Added complete API documentation for admin and client endpoints
 - Added this consolidated README with setup, architecture, testing, and troubleshooting guidance
