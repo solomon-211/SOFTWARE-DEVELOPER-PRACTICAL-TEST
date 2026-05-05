@@ -11,8 +11,6 @@ Practical Internship test/
 ├── API_DOCUMENTATION.md                ← Complete API reference with examples
 │
 ├── school-admin/                       ← ADMIN PORTAL APPLICATION
-│   ├── README.md                       ← Admin app specific documentation
-│   ├── .env.example                    ← Environment variable template
 │   ├── docker-compose.yml              ← Docker configuration for admin app
 │   │
 │   ├── backend/                        ← Node.js/Express API
@@ -123,8 +121,6 @@ Practical Internship test/
 │               └── *.css               ← Global and component styles
 │
 ├── school-client/                      ← CLIENT PORTAL APPLICATION
-│   ├── README.md                       ← Client app specific documentation
-│   ├── .env.example                    ← Environment variable template
 │   ├── docker-compose.yml              ← Docker configuration
 │   │
 │   ├── backend/                        ← Node.js/Express API
