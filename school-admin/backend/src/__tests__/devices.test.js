@@ -1,6 +1,11 @@
 /**
  * Device Verification Tests - school-admin backend
- * Tests for device verification and revocation flows
+ * Purpose: Ensure device verification, revocation, and listing work correctly.
+ * Covers:
+ * - `getPendingDevices()` in `src/services/deviceService.js` (filters & DTO)
+ * - `verifyDevice()` and `revokeDevice()` (mutation, saving, error paths)
+ * Notes:
+ * - Mocks `ClientUser` model and simulates device arrays for each user.
  */
 
 const ClientUser = require('../models/ClientUser');
@@ -15,6 +20,8 @@ describe('DeviceService', () => {
   });
 
   describe('getPendingDevices()', () => {
+    // `getPendingDevices()` should map `ClientUser.devices` -> `pendingDevices` DTO
+    // and filter out verified devices. This test simulates unverified devices.
     it('should return all pending device verifications', async () => {
       const mockUsers = [
         {
@@ -71,6 +78,7 @@ describe('DeviceService', () => {
   });
 
   describe('verifyDevice()', () => {
+    // `verifyDevice()` sets `device.verified = true`, stamps `verifiedAt`, and saves the user
     it('should verify a device for a user', async () => {
       const mockUser = {
         _id: 'user1',
