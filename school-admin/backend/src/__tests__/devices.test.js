@@ -22,6 +22,8 @@ describe('DeviceService', () => {
           firstName: 'John',
           lastName: 'Parent',
           email: 'john@example.com',
+          role: 'parent',
+          isActive: true,
           devices: [
             {
               deviceId: 'device1',
@@ -36,6 +38,8 @@ describe('DeviceService', () => {
           firstName: 'Jane',
           lastName: 'Student',
           email: 'jane@example.com',
+          role: 'student',
+          isActive: true,
           devices: [
             {
               deviceId: 'device2',
@@ -52,8 +56,9 @@ describe('DeviceService', () => {
       const result = await getPendingDevices();
 
       expect(result).toHaveLength(2);
-      expect(result[0].devices[0].verified).toBe(false);
-      expect(result[1].devices[0].verified).toBe(false);
+      expect(result[0].pendingDevices).toBeDefined();
+      expect(result[0].pendingDevices[0].deviceId).toBe('device1');
+      expect(result[1].pendingDevices[0].deviceId).toBe('device2');
     });
 
     it('should return empty array when no pending devices', async () => {
