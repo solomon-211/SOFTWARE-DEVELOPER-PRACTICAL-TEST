@@ -1,6 +1,12 @@
 /**
  * Class Management Tests - school-admin backend
- * Tests for class CRUD operations and teacher assignment
+ * Purpose: Validate class-related operations and teacher assignment logic.
+ * Covers:
+ * - `getAllClasses()` and `getClassById()` in `src/services/classService.js`
+ * - `createClass()` and `updateClass()` behaviours and error handling
+ * - `assignTeacher()` (teacher lookup, assignment, and teacher profile updates)
+ * Notes:
+ * - Tests mock `Class` and `AdminUser` models and focus on DTO/flow correctness.
  */
 
 const Class = require('../models/Class');
@@ -22,6 +28,8 @@ describe('ClassService', () => {
   });
 
   describe('getAllClasses()', () => {
+    // Verifies `classService.getAllClasses()` reads classes via `Class.find()`
+    // and uses `.populate()` in the same way the service expects (teacher info).
     it('should return all active classes', async () => {
       const mockClasses = [
         {
@@ -60,6 +68,8 @@ describe('ClassService', () => {
   });
 
   describe('getClassById()', () => {
+    // Tests `getClassById()` path: `Class.findById().populate(...).`
+    // Ensures the DTO returned contains expected name and id fields.
     it('should return class when found', async () => {
       const mockClass = {
         _id: 'class1',
@@ -88,6 +98,7 @@ describe('ClassService', () => {
   });
 
   describe('createClass()', () => {
+    // Ensures `createClass()` handles duplication checks and creates via `Class.create()`
     it('should create a new class successfully', async () => {
       const classData = { name: 'Junior 1', section: 'C' };
 
@@ -112,6 +123,7 @@ describe('ClassService', () => {
   });
 
   describe('updateClass()', () => {
+    // Validates `updateClass()` uses `Class.findByIdAndUpdate()` and returns the new DTO
     it('should update class details', async () => {
       const updateData = { name: 'Senior 4 Updated' };
 
@@ -137,6 +149,10 @@ describe('ClassService', () => {
   });
 
   describe('assignTeacher()', () => {
+    // Tests `assignTeacher()` flow:
+    // - teacher existence check via `AdminUser.findById`
+    // - class load via `Class.findById` and mutation of `teachers` array
+    // - saving both class and teacher documents
     it('should assign teacher to class', async () => {
       const mockTeacher = {
         _id: 'teacher1',
