@@ -7,7 +7,7 @@ const Student = require('../models/Student');
 const {
   getAllStudents,
   getStudentById,
-  updateStudentGrades,
+  updateGrades,
   markAttendance,
 } = require('../services/studentService');
 
@@ -93,18 +93,22 @@ describe('StudentService', () => {
         save: jest.fn().mockResolvedValue(true),
       };
 
-      Student.findById.mockResolvedValue(mockStudent);
+      Student.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(mockStudent),
+      });
 
-      const gradeData = { subject: 'Math', score: 90, grade: 'A', term: 'term1' };
-      await updateStudentGrades('student1', gradeData, 'teacher1');
+      const gradesData = [{ subject: 'Math', score: 90, grade: 'A', term: 'term1' }];
+      await updateGrades('student1', gradesData, { _id: 'admin1', role: 'admin' });
 
       expect(mockStudent.save).toHaveBeenCalled();
     });
 
     it('should throw error if student not found', async () => {
-      Student.findById.mockResolvedValue(null);
+      Student.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(null),
+      });
 
-      await expect(updateStudentGrades('invalid', {}, 'teacher1')).rejects.toThrow(
+      await expect(updateGrades('invalid', [], { _id: 'admin1', role: 'admin' })).rejects.toThrow(
         'Student not found'
       );
     });
@@ -112,10 +116,16 @@ describe('StudentService', () => {
 
   describe('markAttendance()', () => {
     it('should mark attendance for a student', async () => {
-      const mockStudent = { _id: 'student1', attendance: [], save: jest.fn() };
+      const mockStudent = {
+        _id: 'student1',
+        attendance: [],
+        save: jest.fn().mockResolvedValue(true),
+      };
+
       Student.findById.mockResolvedValue(mockStudent);
 
-      await markAttendance('student1', { date: new Date(), status: 'present' }, 'teacher1');
+      const records = [{ date: new Date(), status: 'present' }];
+      await markAttendance('student1', records, { _id: 'admin1', role: 'admin' });
 
       expect(mockStudent.save).toHaveBeenCalled();
     });
@@ -124,8 +134,9 @@ describe('StudentService', () => {
       const mockStudent = { _id: 'student1', attendance: [] };
       Student.findById.mockResolvedValue(mockStudent);
 
+      const records = [{ date: new Date(), status: 'invalid' }];
       await expect(
-        markAttendance('student1', { date: new Date(), status: 'invalid' }, 'teacher1')
+        markAttendance('student1', records, { _id: 'admin1', role: 'admin' })
       ).rejects.toThrow();
     });
   });
