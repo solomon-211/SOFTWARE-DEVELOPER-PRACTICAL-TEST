@@ -1,6 +1,11 @@
 /**
  * Authentication Tests - school-admin backend
- * Tests for admin/staff login and staff creation
+ * Purpose: Verify admin/staff authentication flows and account creation.
+ * Covers:
+ * - `login()` in `src/services/authService.js` (credential checks, JWT generation)
+ * - `createStaff()` in `src/services/authService.js` (staff creation and validation)
+ * Notes:
+ * - Uses `AdminUser` model mocks to simulate DB queries and password checks.
  */
 
 const jwt = require('jsonwebtoken');
@@ -18,6 +23,10 @@ describe('AuthService', () => {
   });
 
   describe('login()', () => {
+    // This block verifies authentication logic in `authService.login()`:
+    // - `AdminUser.findOne` lookup behavior
+    // - `verifyPassword` usage for credential validation
+    // - `isActive` guards and resulting JWT token generation
     it('should successfully login a valid admin user', async () => {
       const mockAdmin = {
         _id: '507f1f77bcf86cd799439011',
