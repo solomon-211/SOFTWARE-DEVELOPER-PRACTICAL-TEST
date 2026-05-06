@@ -1,6 +1,13 @@
 /**
  * Student Management Tests - school-admin backend
- * Tests for student CRUD operations and academic record management
+ * Purpose: Test student retrieval, academic updates, attendance, promotions, and fee balance.
+ * Covers:
+ * - `getAllStudents()` and `getStudentById()` in `src/services/studentService.js`
+ * - `updateGrades()` (grade creation/update and audit scope)
+ * - `markAttendance()` (record creation/update and validation)
+ * - Promotion flows and fee-balance exposure via DTOs
+ * Notes:
+ * - Uses mocked `Student` model; populates chained queries where needed.
  */
 
 const Student = require('../models/Student');
@@ -55,6 +62,8 @@ describe('StudentService', () => {
   });
 
   describe('getStudentById()', () => {
+    // `getStudentById()` uses chained `.populate()` calls to fetch related fields.
+    // This test ensures populated fields (grades, user info) are returned correctly.
     it('should return student with populated fields', async () => {
       const mockStudent = {
         _id: 'student1',
@@ -86,6 +95,8 @@ describe('StudentService', () => {
   });
 
   describe('updateStudentGrades()', () => {
+    // `updateGrades()` expects an array of grade objects and updates or creates
+    // entries on `student.grades`, then saves the student document.
     it('should update grades for a student', async () => {
       const mockStudent = {
         _id: 'student1',
@@ -115,6 +126,8 @@ describe('StudentService', () => {
   });
 
   describe('markAttendance()', () => {
+    // `markAttendance()` accepts an array of attendance `records` and either
+    // updates existing entries or pushes new ones to `student.attendance`.
     it('should mark attendance for a student', async () => {
       const mockStudent = {
         _id: 'student1',
