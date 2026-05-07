@@ -3,7 +3,7 @@ const { body, param } = require('express-validator');
 const {
   getAllStudents, getStudent, createStudent, updateStudent,
   updateGrades, markAttendance, bulkMarkAttendance, promoteStudents,
-  linkUserAccount, getUnlinkedUsers,
+  linkUserAccount, sendRegistrationInvite, getUnlinkedUsers,
 } = require('../controllers/studentController');
 const { protect, staffOnly, adminOnly } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
@@ -47,11 +47,43 @@ router.post('/', adminOnly,
 // ── Dynamic /:id routes AFTER static routes ───────────────────────────────────
 
 router.get('/:id',  [param('id').isMongoId()], validate, getStudent);
-router.put('/:id',  adminOnly, [param('id').isMongoId()], validate, updateStudent);
+router.put('/:id',  adminOnly,
+  [
+    param('id').isMongoId(),
+    body().custom((value) => {
+      const allowed = ['studentCode', 'firstName', 'lastName', 'dateOfBirth', 'gender', 'class', 'feeBalance', 'isActive'];
+      const keys = Object.keys(value || {});
+      const invalid = keys.filter((k) => !allowed.includes(k));
+      if (invalid.length) {
+        throw new Error(`Invalid update field(s): ${invalid.join(', ')}`);
+      }
+      if (!keys.length) {
+        throw new Error('At least one field must be provided for update');
+      }
+      return true;
+    }),
+    body('studentCode').optional().trim().notEmpty().isLength({ max: 50 }),
+    body('firstName').optional().trim().notEmpty().isLength({ max: 100 }),
+    body('lastName').optional().trim().notEmpty().isLength({ max: 100 }),
+    body('dateOfBirth').optional({ nullable: true }).isISO8601().toDate(),
+    body('gender').optional().isIn(['male', 'female', 'other']),
+    body('class').optional({ nullable: true }).isMongoId(),
+    body('feeBalance').optional().isFloat({ min: 0 }),
+    body('isActive').optional().isBoolean().toBoolean(),
+  ],
+  validate, updateStudent);
 
 router.patch('/:id/link-account', adminOnly,
   [param('id').isMongoId(), body('email').isEmail().normalizeEmail()],
   validate, linkUserAccount);
+
+router.post('/:id/send-invite', adminOnly,
+  [
+    param('id').isMongoId(),
+    body('email').isEmail().normalizeEmail(),
+    body('role').optional().isIn(['student', 'parent']),
+  ],
+  validate, sendRegistrationInvite);
 
 router.put('/:id/grades',
   [
