@@ -6,6 +6,15 @@ const mongoose = require('mongoose');
 const studentSchema = new mongoose.Schema(
   {
     userId:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    invite: {
+      tokenHash: { type: String },
+      email: { type: String, lowercase: true, trim: true },
+      role: { type: String, enum: ['student', 'parent'], default: 'parent' },
+      expiresAt: { type: Date },
+      usedAt: { type: Date },
+      createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminUser' },
+      createdAt: { type: Date },
+    },
     studentCode: { type: String, unique: true, required: true },
     firstName:   { type: String, required: true, trim: true },
     lastName:    { type: String, required: true, trim: true },
