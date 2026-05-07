@@ -425,6 +425,24 @@ const linkUserAccount = async (req, res, next) => {
 };
 
 /**
+ * Send an invite link for registration and auto-linking to a student record.
+ *
+ * Route: POST /api/students/:id/send-invite
+ * Middleware: adminOnly
+ */
+const sendRegistrationInvite = async (req, res, next) => {
+  try {
+    const { email, role } = req.body;
+    const data = await studentService.createRegistrationInvite(req.params.id, email, role, req.user);
+    res.json({
+      success: true,
+      message: 'Registration invite created and sent.',
+      data,
+    });
+  } catch (err) { next(err); }
+};
+
+/**
  * Get users without linked student accounts
  * 
  * Route: GET /api/students/unlinked
@@ -469,5 +487,6 @@ module.exports = {
   bulkMarkAttendance, 
   promoteStudents,
   linkUserAccount, 
+  sendRegistrationInvite,
   getUnlinkedUsers,
 };
