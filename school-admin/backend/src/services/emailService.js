@@ -63,6 +63,14 @@ const notify = {
     html: `<p>Hi ${user.firstName}, your account has been linked to <strong>${studentName}</strong>.</p>`,
     text: `Account linked to ${studentName}.`,
   }),
+  registrationInvite: (email, studentName, inviteUrl, expiresAt) => sendEmail({
+    to: email,
+    subject: 'Complete Student Account Setup — SchoolPortal',
+    html: `<p>You were invited to set up access for <strong>${studentName}</strong>.</p>
+           <p><a href="${inviteUrl}">Complete Registration</a></p>
+           <p>This link expires on ${new Date(expiresAt).toLocaleString()}.</p>`,
+    text: `You were invited to set up access for ${studentName}. Open: ${inviteUrl}. Expires: ${new Date(expiresAt).toLocaleString()}`,
+  }),
   staffPasswordReset: (user, resetUrl) => sendEmail({
     to: user.email, subject: 'Reset Your Password — SchoolAdmin',
     html: `<p>Hi ${user.firstName}, reset your password: <a href="${resetUrl}">Click here</a> (valid 1 hour).</p>`,
