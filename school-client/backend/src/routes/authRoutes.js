@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { registerUser, loginUser, getMe } = require('../controllers/authController');
+const { registerUser, loginUser, getMe, refreshToken, logoutUser } = require('../controllers/authController');
 const { protect } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 
@@ -35,6 +35,8 @@ router.post('/register',
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
     body('deviceId').trim().notEmpty().withMessage('Device ID is required'),
     body('role').optional().isIn(['student', 'parent']).withMessage('Invalid role'),
+    body('inviteToken').optional().isString().trim().isLength({ min: 10 })
+      .withMessage('Invite token is invalid'),
   ],
   validate, registerUser);
 
@@ -69,6 +71,12 @@ router.post('/login',
     body('deviceId').trim().notEmpty().withMessage('Device ID is required'),
   ],
   validate, loginUser);
+
+// Refresh access token using refresh cookie
+router.post('/refresh', refreshToken);
+
+// Logout and revoke refresh token
+router.post('/logout', logoutUser);
 
 /**
  * @swagger
