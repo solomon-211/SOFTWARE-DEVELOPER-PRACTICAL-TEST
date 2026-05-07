@@ -16,7 +16,28 @@ router.get('/teachers',   staffOnly, getTeachers);
 router.get('/:id',        staffOnly, [param('id').isMongoId()], validate, getClass);
 
 router.post('/',          adminOnly, [body('name').trim().notEmpty()], validate, createClass);
-router.put('/:id',        adminOnly, [param('id').isMongoId()], validate, updateClass);
+router.put('/:id',        adminOnly,
+  [
+    param('id').isMongoId(),
+    body().custom((value) => {
+      const allowed = ['name', 'grade', 'section', 'academicYear', 'isActive'];
+      const keys = Object.keys(value || {});
+      const invalid = keys.filter((k) => !allowed.includes(k));
+      if (invalid.length) {
+        throw new Error(`Invalid update field(s): ${invalid.join(', ')}`);
+      }
+      if (!keys.length) {
+        throw new Error('At least one field must be provided for update');
+      }
+      return true;
+    }),
+    body('name').optional().trim().notEmpty().isLength({ max: 120 }),
+    body('grade').optional().trim().isLength({ max: 50 }),
+    body('section').optional().trim().isLength({ max: 50 }),
+    body('academicYear').optional().trim().isLength({ max: 50 }),
+    body('isActive').optional().isBoolean().toBoolean(),
+  ],
+  validate, updateClass);
 
 // Assign a teacher to a subject in this class
 router.patch(
