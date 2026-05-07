@@ -27,6 +27,7 @@
 const Student    = require('../models/Student');
 const ClientUser = require('../models/ClientUser');
 const Class      = require('../models/Class');
+const crypto     = require('crypto');
 const { toStudent } = require('../dtos/adminDto');
 const { log }    = require('./auditService');
 const { notify } = require('./emailService');
@@ -252,6 +253,72 @@ const getUnlinkedUsers = async () => {
   return users.map(u => ({
     id: u._id, name: `${u.firstName} ${u.lastName}`, email: u.email, role: u.role,
   }));
+};
+
+/**
+ * Create a registration invite for a student and send it to parent/student email.
+ *
+ * This keeps current architecture intact while removing manual "register then link"
+ * friction by letting registration auto-link to the student profile.
+ */
+const createRegistrationInvite = async (studentId, email, role, adminUser) => {
+  const student = await Student.findById(studentId);
+  if (!student) {
+    const err = new Error('Student not found');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (student.userId) {
+    const err = new Error('Student is already linked to a user account');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const ttlHours = Number(process.env.INVITE_TTL_HOURS) || 72;
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
+
+  student.invite = {
+    tokenHash,
+    email: normalizedEmail,
+    role: role || 'parent',
+    expiresAt,
+    usedAt: null,
+    createdBy: adminUser?._id,
+    createdAt: new Date(),
+  };
+  await student.save();
+
+  const registerBase = process.env.CLIENT_REGISTER_URL || 'http://localhost:3000/register';
+  const inviteUrl = `${registerBase}?inviteToken=${rawToken}`;
+
+  await notify.registrationInvite(
+    normalizedEmail,
+    `${student.firstName} ${student.lastName}`,
+    inviteUrl,
+    expiresAt
+  );
+
+  await log({
+    actor: adminUser?._id,
+    actorModel: 'AdminUser',
+    actorName: adminUser ? `${adminUser.firstName} ${adminUser.lastName}` : undefined,
+    action: 'student.invite.create',
+    target: `Student:${studentId}`,
+    after: { email: normalizedEmail, role: role || 'parent', expiresAt },
+  });
+
+  return {
+    studentId: student._id,
+    email: normalizedEmail,
+    role: role || 'parent',
+    expiresAt,
+    inviteUrl,
+    inviteToken: process.env.NODE_ENV === 'production' ? undefined : rawToken,
+  };
 };
 
 /**
@@ -608,6 +675,7 @@ const promoteStudents = async (fromClassId, toClassId, adminUser) => {
 
 module.exports = {
   getAllStudents, getStudentById, createStudent, updateStudent,
+  createRegistrationInvite,
   linkUserAccount, getUnlinkedUsers,
   updateGrades, markAttendance, bulkMarkAttendance, promoteStudents,
 };
