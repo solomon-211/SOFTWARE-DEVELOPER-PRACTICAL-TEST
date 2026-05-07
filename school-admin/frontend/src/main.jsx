@@ -1,3 +1,4 @@
+// Main entry point — mounts the app and adds a 30-minute idle session timeout.
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -8,7 +9,7 @@ import './styles/global.css'
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000
 
-// Idle timeout keeps the admin session short-lived and clears auth on inactivity.
+// Watches for user inactivity and logs out after IDLE_TIMEOUT_MS of no interaction.
 function SessionExpiryWatcher() {
   React.useEffect(() => {
     let timerId
@@ -49,7 +50,7 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <SessionExpiryWatcher />
         <App />
       </BrowserRouter>

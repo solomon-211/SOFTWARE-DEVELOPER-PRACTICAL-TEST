@@ -1,12 +1,11 @@
+// Admin API service — each function maps to one backend endpoint and returns unwrapped data.
 import api from './api';
 
-// Dashboard
 export const getDashboardStats = async () => {
   const res = await api.get('/dashboard');
   return res.data.data;
 };
 
-// Devices
 export const getPendingDevices = async () => {
   const res = await api.get('/devices/pending');
   return res.data.data;
@@ -22,7 +21,6 @@ export const revokeDevice = async (userId, deviceId) => {
   return res.data;
 };
 
-// Students
 export const getStudents = async (params = {}) => {
   const res = await api.get('/students', { params });
   return res.data.data;
@@ -63,7 +61,6 @@ export const getUnlinkedUsers = async () => {
   return res.data.data;
 };
 
-// Classes
 export const getClasses = async () => {
   const res = await api.get('/classes');
   return res.data.data;
@@ -99,7 +96,6 @@ export const updateTimetable = async (classId, timetable) => {
   return res.data.data;
 };
 
-// Fees
 export const getTransactions = async (params = {}) => {
   const res = await api.get('/fees', { params });
   return res.data.data;
@@ -115,8 +111,27 @@ export const processWithdrawal = async (txId, action) => {
   return res.data;
 };
 
-// Staff
 export const createStaff = async (data) => {
   const res = await api.post('/auth/staff', data);
   return res.data.data;
+};
+
+export const getCurrentTerm = async () => {
+  const res = await api.get('/terms/current');
+  return res.data.data;
+};
+
+export const chargeStudentFee = async (studentId, amount, description) => {
+  const res = await api.post('/fees/charge', { studentId, amount, description });
+  return res.data;
+};
+
+export const updateChargeFee = async (txId, amount, description) => {
+  const res = await api.patch(`/fees/charge/${txId}`, { amount, description });
+  return res.data;
+};
+
+export const deleteChargeFee = async (txId) => {
+  const res = await api.delete(`/fees/charge/${txId}`);
+  return res.data;
 };

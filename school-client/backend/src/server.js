@@ -1,19 +1,3 @@
-/**
- * ============================================================================
- * SCHOOL CLIENT BACKEND - SERVER ENTRY POINT
- * ============================================================================
- * 
- * Main Express application configuration for the parent/student portal API.
- * Handles:
- * - Security configuration (Helmet, CORS, rate limiting)
- * - Middleware setup (parsing, logging, authentication)
- * - Route registration for client features
- * - Error handling and 404 responses
- * 
- * Environment: Development with nodemon, Production with node
- * Port: Configured via PORT env variable (default: 5001)
- */
-
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
@@ -24,16 +8,22 @@ const cookieParser = require('cookie-parser');
 
 const connectDB = require('./config/db');
 
+// Register models that are referenced by population but not directly used in routes.
+// AdminUser and Class live in the admin backend's collections; the client backend needs them
+// registered so Mongoose can resolve population references.
+require('./models/AdminUser');
+require('./models/Class');
+
 const swaggerUi   = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 
-const authRoutes          = require('./routes/authRoutes');           // Login, register, profile
-const passwordResetRoutes = require('./routes/passwordResetRoutes');   // Password reset flows
-const feeRoutes           = require('./routes/feeRoutes');            // Fee balance, deposits, withdrawals
-const academicRoutes      = require('./routes/academicRoutes');       // Grades, attendance, timetable
-const linkingRoutes       = require('./routes/linkingRoutes');        // Linking requests
+const authRoutes          = require('./routes/authRoutes');
+const passwordResetRoutes = require('./routes/passwordResetRoutes');
+const feeRoutes           = require('./routes/feeRoutes');
+const academicRoutes      = require('./routes/academicRoutes');
+const linkingRoutes       = require('./routes/linkingRoutes');
 
-const errorHandler        = require('./middlewares/errorHandler');    // Global error handler
+const errorHandler        = require('./middlewares/errorHandler');
 
 const app = express();
 
@@ -46,10 +36,9 @@ app.use(
   })
 );
 
-// Rate limiting protects sign-in and payment endpoints from brute-force abuse.
 const limiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,  // 15 minutes
-  max:      Number(process.env.RATE_LIMIT_MAX) || 100,                   // 100 requests
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max:      Number(process.env.RATE_LIMIT_MAX) || 100,
   standardHeaders: true,
   legacyHeaders:   false,
   message: { success: false, message: 'Too many requests, please try again later.' },
@@ -66,7 +55,6 @@ if (process.env.NODE_ENV !== 'test') {
 
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'school-client-api' }));
 
-// Swagger UI exposes the client API contract for testing and handoff.
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'School Client API Docs',
   customCss: '.swagger-ui .topbar { background-color: #0f172a; }',
@@ -92,4 +80,4 @@ if (require.main === module) {
   start();
 }
 
-module.exports = app; // for testing
+module.exports = app;

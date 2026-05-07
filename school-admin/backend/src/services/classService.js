@@ -4,19 +4,21 @@ const { toClass } = require('../dtos/adminDto');
 
 const getAllClasses = async () => {
   const classes = await Class.find({ isActive: true })
-    .populate('teachers.teacher', 'firstName lastName email');
+    .populate('teachers.teacher', 'firstName lastName email')
+    .populate('timetable.teacher', 'firstName lastName');
   return classes.map(toClass);
 };
 
 const getClassById = async (id) => {
   const cls = await Class.findById(id)
-    .populate('teachers.teacher', 'firstName lastName email');
+    .populate('teachers.teacher', 'firstName lastName email')
+    .populate('timetable.teacher', 'firstName lastName');
   if (!cls) {
     const err = new Error('Class not found');
     err.statusCode = 404;
     throw err;
   }
-  return cls;
+  return toClass(cls);
 };
 
 const createClass = async (data) => {
@@ -34,11 +36,6 @@ const updateClass = async (id, data) => {
   return toClass(cls);
 };
 
-/**
- * Assign a teacher to a class for a specific subject.
- * If the teacher is already assigned to that subject in this class, update them.
- * A teacher can be assigned to multiple subjects in the same or different classes.
- */
 const assignTeacher = async (classId, teacherId, subject) => {
   const teacher = await AdminUser.findById(teacherId);
   if (!teacher || teacher.role !== 'teacher') {
@@ -54,7 +51,6 @@ const assignTeacher = async (classId, teacherId, subject) => {
     throw err;
   }
 
-  // Check if this subject already has a teacher assigned — replace them
   const existingIdx = cls.teachers.findIndex(
     (t) => t.subject.toLowerCase() === subject.toLowerCase()
   );
@@ -67,8 +63,7 @@ const assignTeacher = async (classId, teacherId, subject) => {
 
   await cls.save();
 
-  // Track on the teacher's profile which classes they're assigned to
-  if (!teacher.assignedClasses.map(String).includes(String(classId))) {
+  if (!(teacher.assignedClasses || []).map(String).includes(String(classId))) {
     teacher.assignedClasses.push(classId);
     await teacher.save();
   }
@@ -77,9 +72,6 @@ const assignTeacher = async (classId, teacherId, subject) => {
   return toClass(cls);
 };
 
-/**
- * Remove a teacher from a specific subject in a class.
- */
 const removeTeacher = async (classId, subject) => {
   const cls = await Class.findById(classId);
   if (!cls) {
@@ -88,18 +80,30 @@ const removeTeacher = async (classId, subject) => {
     throw err;
   }
 
+  const removedTeacherIds = cls.teachers
+    .filter((assignment) => assignment.subject.toLowerCase() === subject.toLowerCase())
+    .map((assignment) => String(assignment.teacher));
+
   cls.teachers = cls.teachers.filter(
     (t) => t.subject.toLowerCase() !== subject.toLowerCase()
   );
 
   await cls.save();
+
+  const uniqueRemovedTeacherIds = [...new Set(removedTeacherIds)];
+  const teachers = await AdminUser.find({ _id: { $in: uniqueRemovedTeacherIds } });
+  await Promise.all(teachers.map(async (teacher) => {
+    const stillAssigned = cls.teachers.some((assignment) => String(assignment.teacher) === String(teacher._id));
+    if (!stillAssigned) {
+      teacher.assignedClasses = (teacher.assignedClasses || []).filter((assignedClassId) => String(assignedClassId) !== String(classId));
+      await teacher.save();
+    }
+  }));
+
   await cls.populate('teachers.teacher', 'firstName lastName email');
   return toClass(cls);
 };
 
-/**
- * Update the timetable for a class.
- */
 const updateTimetable = async (classId, timetable) => {
   const cls = await Class.findByIdAndUpdate(
     classId,
@@ -111,12 +115,11 @@ const updateTimetable = async (classId, timetable) => {
     err.statusCode = 404;
     throw err;
   }
+  await cls.populate('teachers.teacher', 'firstName lastName email');
+  await cls.populate('timetable.teacher', 'firstName lastName');
   return toClass(cls);
 };
 
-/**
- * Get all teachers for dropdowns.
- */
 const getTeachers = async () => {
   const teachers = await AdminUser.find({ role: 'teacher', isActive: true })
     .select('firstName lastName email assignedClasses')

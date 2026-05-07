@@ -18,7 +18,14 @@ export default function LoginPage() {
       await login(form.email, form.password)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.')
+      const msg = err.response?.data?.message || 'Login failed. Please check your credentials.'
+      if (msg.includes('Device not verified')) {
+        const { getDeviceId } = await import('../utils/deviceId')
+        const did = getDeviceId()
+        setError(`Your device is pending admin approval. Share this Device ID with the school admin: ${did}`)
+      } else {
+        setError(msg)
+      }
     } finally {
       setLoading(false)
     }

@@ -15,7 +15,7 @@ const statusConfig = {
 
 export default function AttendancePage() {
   const user      = getStoredUser()
-  const studentId = user?.studentProfile || user?.children?.[0] || null
+  const studentId = user?.studentProfile || user?.children?.[0] || user?.id || null
 
   const { data: records, isLoading } = useQuery({
     queryKey:        ['attendance', studentId],
@@ -176,3 +176,4 @@ export default function AttendancePage() {
     </Layout>
   )
 }
+

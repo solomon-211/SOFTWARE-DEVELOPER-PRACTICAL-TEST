@@ -1,3 +1,4 @@
+// Email service — sends transactional emails via SMTP or logs them in dev mode.
 const nodemailer = require('nodemailer');
 
 let transporter;
@@ -5,6 +6,8 @@ let transporter;
 const formatCurrency = (amount) => Number(amount).toLocaleString();
 const buildGreeting = (user) => `Hi ${user.firstName || 'there'}`;
 
+// Returns a cached transporter; creates one on first call.
+// Uses real SMTP when credentials are set, otherwise logs to console.
 const getTransporter = async () => {
   if (transporter) return transporter;
 
@@ -16,6 +19,7 @@ const getTransporter = async () => {
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     });
   } else {
+    // Dev-mode stub — prints email details without sending
     transporter = {
       sendMail: async (opts) => {
         console.log('\n📧 [EMAIL - dev mode, not sent]');
@@ -42,6 +46,7 @@ const sendLinkingNotification = (user, subject, html, text) => sendEmail({
   text,
 });
 
+// Pre-built notification helpers for common system events
 const notify = {
   deviceVerified: (user) => sendEmail({
     to: user.email,

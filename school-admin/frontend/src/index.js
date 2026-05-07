@@ -1,3 +1,4 @@
+// Application entry point — bootstraps React with routing and React Query.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

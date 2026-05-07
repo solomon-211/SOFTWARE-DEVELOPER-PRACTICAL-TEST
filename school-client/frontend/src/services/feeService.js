@@ -1,5 +1,7 @@
 import api from './api';
 
+// Fee API calls for the client portal.
+// Deposits and withdrawals are created as 'pending' — admin must approve before balance changes.
 export const getFeeInfo = async (studentId) => {
   const res = await api.get(`/fees/${studentId}`);
   return res.data.data;

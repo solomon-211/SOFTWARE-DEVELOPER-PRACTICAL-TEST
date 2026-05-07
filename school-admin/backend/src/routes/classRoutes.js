@@ -1,3 +1,4 @@
+// Class routes — all endpoints require authentication; write operations are admin-only.
 const express = require('express');
 const { body, param } = require('express-validator');
 const {
@@ -11,10 +12,12 @@ const router = express.Router();
 
 router.use(protect);
 
+// Read — accessible to all staff
 router.get('/',           staffOnly, getAllClasses);
 router.get('/teachers',   staffOnly, getTeachers);
 router.get('/:id',        staffOnly, [param('id').isMongoId()], validate, getClass);
 
+// Write — admin only
 router.post('/',          adminOnly, [body('name').trim().notEmpty()], validate, createClass);
 router.put('/:id',        adminOnly,
   [

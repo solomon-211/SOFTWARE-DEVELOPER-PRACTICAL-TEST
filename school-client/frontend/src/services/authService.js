@@ -1,6 +1,7 @@
 import api from './api';
 import { getDeviceId } from '../utils/deviceId';
 
+// Token and user are stored in sessionStorage so they clear on tab close.
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 

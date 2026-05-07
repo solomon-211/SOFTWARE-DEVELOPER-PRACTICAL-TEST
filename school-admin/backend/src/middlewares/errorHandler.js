@@ -1,3 +1,5 @@
+// Global error handler — logs the error and returns a JSON error response.
+// In production, hides internal 500 error details from the client.
 const errorHandler = (err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`, err.stack);
 

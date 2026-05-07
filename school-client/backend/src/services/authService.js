@@ -3,11 +3,6 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const Student = require('../models/Student');
 
-/**
- * Generate a signed JWT for a user.
- * @param {object} user - Mongoose User document
- * @returns {string} JWT token
- */
 const generateToken = (user) =>
   jwt.sign(
     { id: user._id, role: user.role },
@@ -15,10 +10,6 @@ const generateToken = (user) =>
     { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
   );
 
-/**
- * Generate a refresh token (longer lived) and return it.
- * Stored in DB for rotation/revocation support.
- */
 const generateRefreshToken = (user) =>
   jwt.sign(
     { id: user._id, type: 'refresh' },
@@ -26,11 +17,6 @@ const generateRefreshToken = (user) =>
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
   );
 
-/**
- * Register a new parent or student account.
- * @param {object} data - { firstName, lastName, email, phone, password, role, deviceId, deviceName }
- * @returns {{ user, token, refreshToken }}
- */
 const register = async (data) => {
   const { firstName, lastName, email, phone, password, role, deviceId, deviceName, inviteToken } = data;
 
@@ -56,7 +42,6 @@ const register = async (data) => {
       throw err;
     }
 
-    // Optional email lock: if invite was sent to specific email, enforce it.
     if (invitedStudent.invite?.email && invitedStudent.invite.email !== email.toLowerCase().trim()) {
       const err = new Error('Invite token email does not match this account email');
       err.statusCode = 400;
@@ -82,7 +67,6 @@ const register = async (data) => {
     devices: [{ deviceId, deviceName: deviceName || 'Unknown Device', verified: false }],
   });
 
-  // If invite token is provided, auto-link this new account to the invited student.
   if (invitedStudent) {
     invitedStudent.userId = user._id;
     invitedStudent.invite.usedAt = new Date();
@@ -101,18 +85,12 @@ const register = async (data) => {
 
   const token = generateToken(user);
   const refreshToken = generateRefreshToken(user);
-  // Persist refresh token to user record
   user.refreshTokens = user.refreshTokens || [];
   user.refreshTokens.push({ token: refreshToken, lastUsedAt: new Date() });
   await user.save();
   return { user, token, refreshToken };
 };
 
-/**
- * Authenticate a user with email, password, and device ID.
- * @param {object} data - { email, password, deviceId }
- * @returns {{ user, token }}
- */
 const login = async (data) => {
   const { email, password, deviceId } = data;
 
@@ -129,7 +107,6 @@ const login = async (data) => {
     throw err;
   }
 
-  // Register device if not already known
   const knownDevice = user.devices.find((d) => d.deviceId === deviceId);
   if (!knownDevice) {
     user.devices.push({ deviceId, deviceName: 'Unknown Device', verified: false });
@@ -140,6 +117,25 @@ const login = async (data) => {
     const err = new Error('Device not verified. Please wait for admin approval.');
     err.statusCode = 403;
     throw err;
+  }
+
+  // Auto-link: if this is a student account with no studentProfile set,
+  // try to find a matching student record by userId or by name+email.
+  if (user.role === 'student' && !user.studentProfile) {
+    let studentRecord = await Student.findOne({ userId: user._id });
+    if (!studentRecord) {
+      // Try matching by first+last name (admin-created students without invite)
+      studentRecord = await Student.findOne({
+        firstName: { $regex: new RegExp(`^${user.firstName}$`, 'i') },
+        lastName:  { $regex: new RegExp(`^${user.lastName}$`, 'i') },
+        userId:    null,
+      });
+    }
+    if (studentRecord) {
+      studentRecord.userId = user._id;
+      user.studentProfile = studentRecord._id;
+      await Promise.all([studentRecord.save(), user.save()]);
+    }
   }
 
   const token = generateToken(user);
@@ -163,13 +159,11 @@ const refreshSession = async (refreshToken) => {
     if (!user) {
       const err = new Error('User not found'); err.statusCode = 404; throw err;
     }
-    // Check token exists in DB
     const stored = (user.refreshTokens || []).find((t) => t.token === refreshToken);
     if (!stored) {
       const err = new Error('Refresh token revoked'); err.statusCode = 401; throw err;
     }
 
-    // Enforce inactivity timeout for refresh sessions.
     const idleTimeoutMinutes = Number(process.env.SESSION_IDLE_TIMEOUT_MINUTES) || 30;
     const idleCutoffMs = idleTimeoutMinutes * 60 * 1000;
     const lastActivity = stored.lastUsedAt || stored.createdAt;
@@ -179,11 +173,9 @@ const refreshSession = async (refreshToken) => {
       const err = new Error('Session expired due to inactivity'); err.statusCode = 401; throw err;
     }
 
-    // Generate new tokens (rotate)
     const token = generateToken(user);
     const newRefresh = generateRefreshToken(user);
 
-    // Replace old refresh token with the new one
     user.refreshTokens = (user.refreshTokens || []).filter((t) => t.token !== refreshToken);
     user.refreshTokens.push({ token: newRefresh, lastUsedAt: new Date() });
     await user.save();
@@ -194,9 +186,6 @@ const refreshSession = async (refreshToken) => {
   }
 };
 
-/**
- * Logout / revoke a refresh token
- */
 const revokeRefreshToken = async (refreshToken) => {
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);

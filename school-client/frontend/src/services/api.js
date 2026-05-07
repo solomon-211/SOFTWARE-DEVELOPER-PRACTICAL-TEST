@@ -7,7 +7,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Attach JWT and device ID to every request
 api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -15,8 +14,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — clear session and redirect to login
-// Attempt to refresh access token on 401 once, then retry original request
 const refreshClient = async () => {
   try {
     const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
@@ -42,7 +39,6 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       }
-      // Refresh failed — clear session and redirect
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
       window.location.href = '/login';

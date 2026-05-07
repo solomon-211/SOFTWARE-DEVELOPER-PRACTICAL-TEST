@@ -1,47 +1,49 @@
 # School Management System
 
-A comprehensive school management platform with separate applications for administrators and parents/students. Built with React.js frontend and Node.js/Express backend, featuring JWT authentication, device verification, fee management, and academic records tracking.
+A full-stack school management platform built for the Elevanda Ventures Software Developer Practical Test. The system has two separate applications — one for school administrators and staff, and one for parents and students.
 
-## Overview
+## Applications
 
-The system consists of two separate applications:
+| App | Purpose | Frontend | Backend |
+|-----|---------|----------|---------|
+| **school-admin** | Admin & teacher portal | React.js on port 3001 | Node.js/Express on port 5002 |
+| **school-client** | Parent & student portal | React.js on port 3000 | Node.js/Express on port 5001 |
 
-1. **Admin Application** - For school administrators and teachers to manage students, classes, fees, attendance, and grades
-2. **Client Application** - For parents and students to view fees, grades, attendance, and manage payments
+Both backends connect to the **same MongoDB database** (`school_db`) and the same `users` collection. This is intentional — it lets the admin verify devices and manage accounts created through the client registration flow.
+
+---
 
 ## Project Structure
 
-```plaintext
+```
 school-management-system/
-├── school-admin/                 # Admin portal
-│   ├── backend/                  # Node.js/Express API
+├── school-admin/
+│   ├── backend/
 │   │   ├── src/
-│   │   │   ├── __tests__/       # Jest test files
-│   │   │   ├── config/           # Database configuration
-│   │   │   ├── controllers/      # Route handlers
-│   │   │   ├── dtos/             # Data transfer objects
-│   │   │   ├── middlewares/      # Auth, validation, error handling
-│   │   │   ├── models/           # Mongoose schemas
-│   │   │   ├── routes/           # Express routers
-│   │   │   ├── services/         # Business logic
-│   │   │   └── server.js         # Entry point
+│   │   │   ├── config/         # DB and Swagger setup
+│   │   │   ├── controllers/    # Route handlers
+│   │   │   ├── dtos/           # Data transfer objects
+│   │   │   ├── middlewares/    # Auth, validation, error handling
+│   │   │   ├── models/         # Mongoose schemas
+│   │   │   ├── routes/         # Express routers
+│   │   │   ├── services/       # Business logic
+│   │   │   └── server.js
 │   │   ├── Dockerfile
-│   │   ├── package.json
-│   │   └── jest.config.js
-│   ├── frontend/                 # React.js UI
+│   │   ├── .env.example
+│   │   └── package.json
+│   ├── frontend/
 │   │   ├── src/
-│   │   │   ├── components/       # Reusable components
-│   │   │   ├── pages/            # Route pages
-│   │   │   ├── services/         # API calls
-│   │   │   └── styles/           # CSS styling
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   ├── services/
+│   │   │   └── styles/
 │   │   ├── Dockerfile
 │   │   ├── nginx.conf
 │   │   └── package.json
-│   ├── docker-compose.yml
-│   └── backend/.env.example
+│   └── docker-compose.yml
 │
-├── school-client/                # Parent/Student portal
-│   ├── backend/                  # Node.js/Express API
+├── school-client/
+│   ├── backend/
 │   │   ├── src/
 │   │   │   ├── config/
 │   │   │   ├── controllers/
@@ -52,340 +54,171 @@ school-management-system/
 │   │   │   ├── services/
 │   │   │   └── server.js
 │   │   ├── Dockerfile
+│   │   ├── .env.example
 │   │   └── package.json
-│   ├── frontend/                 # React.js UI
+│   ├── frontend/
 │   │   ├── src/
 │   │   ├── Dockerfile
 │   │   ├── nginx.conf
 │   │   └── package.json
-│   ├── docker-compose.yml
-│   └── backend/.env.example
+│   └── docker-compose.yml
 │
-├── school-admin/README.md        # Admin app specific setup and usage
-├── school-client/README.md       # Client app specific setup and usage
-└── README.md                     # Consolidated project documentation
+├── school-admin/README.md
+├── school-client/README.md
+└── README.md
 ```
 
-## Key Features
-
-### Authentication & Security
-
-- SHA-512 password hashing
-- JWT token-based authentication
-- Device verification system (admin approval required)
-- Role-based access control (Admin, Teacher, Student, Parent)
-- HTTP security headers (Helmet.js)
-- Rate limiting protection
-- Input validation and sanitization
-
-### Admin Features
-
-- Dashboard with statistics (students, teachers, fees, attendance)
-- Student management (create, update, view)
-- Teacher/Staff management
-- Class management and teacher assignment
-- Device verification and approval workflow
-- Fee transaction management (approve/reject payments & refunds)
-- Grade management (teachers can update grades)
-- Attendance tracking and bulk operations
-- Academic term management
-- Student linking requests (parent-to-student mapping)
-
-### Parent/Student Features
-
-- Secure registration and login
-- Fee payment submission
-- Fee balance tracking
-- Payment history and transaction status
-- Dashboard with quick stats
-- View grades and academic records
-- Attendance tracking
-- Class timetable
-- Low balance alerts
-- Link students (for parents)
+---
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-| ----- | ----------- | ------- |
-| **Frontend** | React.js | ^18.3.1 |
-| **Frontend Routing** | React Router DOM | ^6.23.1 |
-| **Frontend State** | TanStack React Query | ^5.40.0 |
-| **Frontend Charts** | Recharts | ^2.12.7 |
-| **Frontend Icons** | Lucide React | ^1.14.0 |
-| **HTTP Client** | Axios | ^1.7.2 |
-| **Build Tool** | Vite | ^5.3.1 |
-| **Backend Runtime** | Node.js | ^20 |
-| **Backend Framework** | Express.js | ^4.19.2 |
-| **Database** | MongoDB | 7.0 |
-| **ODM** | Mongoose | ^8.4.1 |
-| **Authentication** | JSON Web Tokens (JWT) | ^9.0.2 |
-| **Password Hashing** | bcryptjs | ^2.4.3 |
-| **Security Headers** | Helmet.js | ^7.1.0 |
-| **Rate Limiting** | express-rate-limit | ^7.3.1 |
-| **Validation** | express-validator | ^7.1.0 |
-| **Email** | Nodemailer | ^8.0.7 |
-| **File Uploads** | Multer | ^2.1.1 |
-| **Image Storage** | Cloudinary | ^2.10.0 |
-| **Logging** | Morgan | ^1.10.0 |
-| **Testing** | Jest + Supertest | ^29.7.0 |
-| **Dev Server** | Nodemon | ^3.1.3 |
-| **Containerization** | Docker + Docker Compose | Latest |
-| **Web Server** | Nginx | Latest |
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React.js 18, React Router v6, TanStack React Query v5 |
+| Charts | Recharts |
+| Icons | Lucide React |
+| HTTP Client | Axios |
+| Build Tool | Vite |
+| Backend | Node.js 20, Express.js 4 |
+| Database | MongoDB 7, Mongoose 8 |
+| Auth | JWT (jsonwebtoken) |
+| Password Hashing | SHA-512 via Node.js built-in `crypto` |
+| Security | Helmet.js, express-rate-limit, express-validator |
+| Email | Nodemailer |
+| File Uploads | Multer + Cloudinary |
+| Logging | Morgan |
+| Containerization | Docker + Docker Compose + Nginx |
+| API Docs | Swagger UI (swagger-jsdoc + swagger-ui-express) |
 
-## Prerequisites
+---
 
-- **Node.js** >= 18.0.0
-- **npm** >= 9.0.0
-- **MongoDB** (local or Atlas)
-- **Docker & Docker Compose** (optional, for containerized deployment)
+## Core Features
+
+### Authentication & Security
+
+- SHA-512 password hashing (Node.js `crypto` module — no bcrypt)
+- JWT access tokens (short-lived, default 15 min) + refresh token rotation
+- Device ID verification — admin must approve each device before the user can access protected routes
+- Role-based access control: Admin, Teacher, Student, Parent
+- HTTP security headers via Helmet.js
+- Rate limiting on all routes
+- Input validation and sanitization via express-validator
+- 30-minute inactivity session timeout (configurable via `SESSION_IDLE_TIMEOUT_MINUTES`)
+
+### Admin Features
+
+- Dashboard with live stats (students, teachers, fees collected, attendance rates)
+- Student management — create, update, promote between classes
+- Teacher/staff management — create accounts, assign to classes and subjects
+- Class management — create classes, assign teachers per subject, set timetables
+- Device verification — approve or revoke user devices
+- Fee management — view all transactions, approve/reject payments and refund requests
+- Fee schedule templates — create reusable fee definitions
+- Fee charging — charge individual students or entire classes; edit or delete pending charges
+- Grade management — teachers update grades per subject; scoped to their assigned classes
+- Attendance tracking — individual and bulk attendance marking
+- Academic term management
+- Student linking requests — approve parent-to-student account links
+- Audit logging for all sensitive operations
+
+### Parent/Student Features
+
+- Registration and login with device verification flow
+- Dashboard with outstanding fee alerts and quick stats
+- Fee management — view charges from school, submit payments with proof, request refunds
+- Grades — view all subjects, scores, and terms
+- Attendance — view attendance history
+- Timetable — color-coded weekly schedule with teacher names
+- Account linking — parents can link to a student record using the student code
+- In-app alerts for low balance, pending payments, and device verification status
+
+### Push Notifications
+
+This is a **web application** (React.js), not a mobile app. Native push notifications are not implemented. In-app alerts for low balance, payment confirmation, and device verification are shown directly in the dashboard UI. A React Native or Flutter implementation would add native push support via Firebase Cloud Messaging (FCM).
+
+---
 
 ## Quick Start
 
-### Option 1: Local Development (Without Docker)
+### Prerequisites
 
-#### Admin Backend
+- Node.js >= 18
+- npm >= 9
+- MongoDB (local or Atlas)
+- Docker & Docker Compose (optional)
+
+### Option 1: Local Development
 
 ```bash
+# Admin backend
 cd school-admin/backend
 cp .env.example .env
-
-# Edit .env with your configuration:
-# MONGO_URI=mongodb://localhost:27017/school_admin
-# JWT_SECRET=your_secret_key
-# etc.
-
+# Edit .env — set MONGO_URI, JWT_SECRET, etc.
 npm install
-npm run dev    # Development mode with nodemon
-npm start      # Production mode
-```
+npm run dev        # runs on http://localhost:5002
 
-#### Admin Frontend
-
-```bash
+# Admin frontend (new terminal)
 cd school-admin/frontend
 npm install
-npm start      # Runs on http://localhost:3001
-```
+npm run dev        # runs on http://localhost:3001
 
-#### Client Backend
-
-```bash
+# Client backend (new terminal)
 cd school-client/backend
 cp .env.example .env
-# Edit .env with your configuration
 npm install
-npm run dev
-```
+npm run dev        # runs on http://localhost:5001
 
-#### Client Frontend
-
-```bash
+# Client frontend (new terminal)
 cd school-client/frontend
 npm install
-npm start      # Runs on http://localhost:3000
+npm run dev        # runs on http://localhost:3000
 ```
 
-### Option 2: Docker Deployment
-
-#### Admin Application
+### Option 2: Docker
 
 ```bash
+# Admin app
 cd school-admin
 cp backend/.env.example backend/.env
-# Edit backend/.env as needed
-
 docker-compose up --build
-# Admin app runs on http://localhost:3001
-# Admin API runs on http://localhost:5002
-```
+# Admin frontend: http://localhost:3001
+# Admin API:      http://localhost:5002
 
-#### Client Application
-
-```bash
+# Client app (new terminal)
 cd school-client
 cp backend/.env.example backend/.env
-# Edit backend/.env as needed
-
 docker-compose up --build
-# Client app runs on http://localhost:3000
-# Client API runs on http://localhost:5001
+# Client frontend: http://localhost:3000
+# Client API:      http://localhost:5001
 ```
+
+---
 
 ## Initial Setup
 
-### Create Admin Account (Choose One)
-
-#### Method 1: Seed Script
+### Create the Admin Account
 
 ```bash
 cd school-admin/backend
 npm run seed
-# Creates: admin@school.rw / Admin@1234
 ```
 
-#### Method 2: Manual MongoDB
+This creates the default admin account:
 
-```bash
-# In MongoDB Compass or mongo shell
-db.adminusers.insertOne({
-  firstName: "Super",
-  lastName: "Admin",
-  email: "admin@school.rw",
-  passwordHash: "your_sha512_hash",
-  role: "admin",
-  isActive: true,
-  createdAt: new Date(),
-  updatedAt: new Date()
-})
+```
+Email:    admin@school.rw
+Password: Admin@1234
 ```
 
-### Login Credentials
-
-```plaintext
-Admin Email: admin@school.rw
-Admin Password: Admin@1234
-```
-
-## API Documentation
-
-The API is documented in two ways inside this repository:
-
-- Swagger UI on each backend: `/api-docs`
-- Consolidated standards and critical endpoint map in this README
-
-## API Standards
-
-The API uses a consistent structure across both applications:
-
-- Success responses follow `{ success: true, data: ... }`
-- State-changing operations can also return a `message`
-- Errors return a shared format with `success: false`, a message, and a status code
-- Sensitive fields are removed through DTOs before data is returned
-- Audit logging records important changes such as grades, attendance, fees, and device approvals
-- Role-based access control limits teachers to assigned classes and protects admin-only actions
-- Business logic stays inside services, while controllers only handle HTTP requests and responses
-
-### Quick API Examples
-
-**Admin Login:**
-
-```bash
-curl -X POST http://localhost:5002/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@school.rw","password":"Admin@1234"}'
-```
-
-**Get Dashboard Stats:**
-
-```bash
-curl -X GET http://localhost:5002/api/dashboard/stats \
-  -H "Authorization: Bearer <JWT_TOKEN>"
-```
-
-**Student Registration:**
-
-```bash
-curl -X POST http://localhost:5001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "firstName":"John",
-    "lastName":"Parent",
-    "email":"john@example.com",
-    "password":"SecurePass@123",
-    "deviceId":"device123",
-    "role":"parent"
-  }'
-```
-
-### Critical Endpoint Map
-
-These endpoints cover the core submission workflows.
-
-#### Admin API (`http://localhost:5002/api`)
-
-- `POST /auth/login` - Admin/staff login
-- `POST /auth/staff` - Create staff user (admin only)
-- `GET /dashboard` - Dashboard statistics
-- `GET /devices/pending` - List unverified devices
-- `PATCH /devices/:userId/:deviceId/verify` - Verify device
-- `PATCH /devices/:userId/:deviceId/revoke` - Revoke device
-- `GET /students` - List students (teacher/admin scope)
-- `PUT /students/:id/grades` - Update grades
-- `PUT /students/:id/attendance` - Update attendance
-- `POST /students/bulk-attendance` - Bulk attendance
-- `POST /students/:id/send-invite` - Registration invite for auto-linking
-- `GET /classes` - List classes
-- `PATCH /classes/:id/assign-teacher` - Assign teacher to subject
-- `PUT /classes/:id/timetable` - Update timetable
-- `GET /fees` - List fee transactions
-- `PATCH /fees/:txId/process` - Approve/reject fee transaction
-
-#### Client API (`http://localhost:5001/api`)
-
-- `POST /auth/register` - Register parent/student account
-- `POST /auth/login` - Login with device ID
-- `POST /auth/refresh` - Refresh access token
-- `POST /auth/logout` - Revoke refresh token
-- `GET /auth/me` - Current profile
-- `GET /fees/:studentId` - Fee balance and history
-- `POST /fees/:studentId/deposit` - Submit payment with proof
-- `POST /fees/:studentId/withdraw` - Request refund
-- `GET /academic/:studentId/grades` - View grades
-- `GET /academic/:studentId/attendance` - View attendance
-- `GET /academic/:studentId/timetable` - View timetable
-
-## Testing
-
-The admin backend includes Jest coverage for authentication, device verification, and student management.
-
-### Run Tests
-
-```bash
-cd school-admin/backend
-npm test                # Run all tests
-npm test -- --watch   # Watch mode
-npm test -- --coverage # Coverage report
-```
-
-### Available Tests
-
-- **auth.test.js** - Authentication and login flows
-- **devices.test.js** - Device verification workflows
-- **students.test.js** - Student management and academic records
-
-### Test Structure
-
-```text
-school-admin/backend/src/__tests__/
-├── auth.test.js
-├── devices.test.js
-└── students.test.js
-```
-
-### Coverage Notes
-
-- Jest is configured in `school-admin/backend/jest.config.js`
-- Tests use mocked Mongoose models and service dependencies
-- Expected coverage targets are at least 70% for statements, functions, and lines
-
-### Common Commands
-
-```bash
-npm test
-npm test -- --watch
-npm test -- --coverage
-npm test auth.test.js
-npm test -- --testNamePattern="login"
-```
+---
 
 ## Environment Variables
 
-### Admin Backend (.env.example)
+### Admin Backend (`school-admin/backend/.env`)
 
 ```env
-MONGO_URI=mongodb://localhost:27017/school_admin
-JWT_SECRET=your_secret_key
+MONGO_URI=mongodb://localhost:27017/school_db
+JWT_SECRET=your_jwt_secret_here
 JWT_EXPIRES_IN=8h
 PORT=5002
 NODE_ENV=development
@@ -394,13 +227,13 @@ RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=200
 ```
 
-### Client Backend (.env.example)
+### Client Backend (`school-client/backend/.env`)
 
 ```env
-MONGO_URI=mongodb://localhost:27017/school_client
-JWT_SECRET=your_secret_key
+MONGO_URI=mongodb://localhost:27017/school_db
+JWT_SECRET=your_jwt_secret_here
 JWT_EXPIRES_IN=15m
-JWT_REFRESH_SECRET=your_refresh_secret_key
+JWT_REFRESH_SECRET=your_refresh_secret_here
 JWT_REFRESH_EXPIRES_IN=7d
 SESSION_IDLE_TIMEOUT_MINUTES=30
 PORT=5001
@@ -410,232 +243,185 @@ RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
 ```
 
+> Both backends must use the **same `MONGO_URI`** to share the database.
+
+---
+
+## API Documentation
+
+Swagger UI is available on each backend after startup:
+
+- Admin API docs: `http://localhost:5002/api-docs`
+- Client API docs: `http://localhost:5001/api-docs`
+
+### Admin API (`http://localhost:5002/api`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login` | Admin/staff login |
+| POST | `/auth/staff` | Create staff account (admin only) |
+| GET | `/dashboard` | Dashboard statistics |
+| GET | `/devices/pending` | List unverified devices |
+| PATCH | `/devices/:userId/:deviceId/verify` | Verify a device |
+| PATCH | `/devices/:userId/:deviceId/revoke` | Revoke a device |
+| GET | `/students` | List students (teacher-scoped) |
+| POST | `/students` | Create student record |
+| PUT | `/students/:id` | Update student |
+| PUT | `/students/:id/grades` | Update grades |
+| PUT | `/students/:id/attendance` | Mark attendance |
+| POST | `/students/bulk-attendance` | Bulk attendance |
+| POST | `/students/promote` | Promote students between classes |
+| POST | `/students/:id/send-invite` | Send registration invite |
+| GET | `/classes` | List classes |
+| PATCH | `/classes/:id/assign-teacher` | Assign teacher to subject |
+| PUT | `/classes/:id/timetable` | Update timetable |
+| GET | `/fees` | List all fee transactions |
+| POST | `/fees/charge` | Charge a fee to a student |
+| PATCH | `/fees/charge/:txId` | Edit a pending charge |
+| DELETE | `/fees/charge/:txId` | Delete a pending charge |
+| PATCH | `/fees/:txId/process` | Approve or reject a payment/refund |
+| GET | `/fee-schedules` | List fee schedule templates |
+| POST | `/fee-schedules` | Create fee schedule template |
+| DELETE | `/fee-schedules/:id` | Delete fee schedule template |
+
+### Client API (`http://localhost:5001/api`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/register` | Register parent/student |
+| POST | `/auth/login` | Login with device ID |
+| POST | `/auth/refresh` | Refresh access token |
+| POST | `/auth/logout` | Revoke refresh token |
+| GET | `/auth/me` | Current user profile |
+| GET | `/fees/:studentId` | Fee balance and history |
+| POST | `/fees/:studentId/deposit` | Submit payment with proof |
+| POST | `/fees/:studentId/withdraw` | Request refund |
+| GET | `/academic/:studentId/grades` | View grades |
+| GET | `/academic/:studentId/attendance` | View attendance |
+| GET | `/academic/:studentId/timetable` | View timetable |
+| GET | `/academic/:studentId/profile` | Student profile |
+| POST | `/linking` | Submit account linking request |
+| GET | `/linking` | View linking requests |
+
+---
+
 ## Architecture
 
-### Layered Architecture
-
-```plaintext
-Routes (Express Router)
-    ↓
-Controllers (Request handlers)
-    ↓
-Services (Business logic)
-    ↓
-Models (MongoDB schemas)
-    ↓
-Database (MongoDB)
+```
+Routes → Controllers → Services → Models → MongoDB
 ```
 
-### Data Transfer Objects (DTOs)
-
-DTOs are used to transform data before sending to frontend:
-
-- Omits sensitive fields (passwordHash, etc.)
-- Flattens nested objects for API responses
-- Ensures consistent data contracts
+- Routes are thin — only define paths and apply middleware
+- Controllers handle HTTP request/response only
+- Services contain all business logic
+- DTOs strip sensitive fields before data leaves the backend
+- Audit logs track grades, attendance, fees, and device approvals
 
 ### Middleware Pipeline
 
-1. **Security**: Helmet, CORS
-2. **Rate Limiting**: express-rate-limit
-3. **Body Parsing**: express.json()
-4. **Authentication**: JWT verification
-5. **Device Verification**: X-Device-ID header validation
-6. **Authorization**: Role-based access control
-7. **Validation**: express-validator
-8. **Error Handling**: Global error handler
+1. Helmet (security headers)
+2. CORS
+3. Rate limiting
+4. Body parsing
+5. JWT authentication (`protect`)
+6. Device verification (`requireVerifiedDevice`)
+7. Role-based authorization
+8. Input validation (express-validator)
+9. Global error handler
+
+---
 
 ## Key Workflows
 
-### Device Verification Flow
+### Device Verification
 
-```plaintext
-User Registration/Login
-    ↓
-Device ID Sent
-    ↓
-Device Added to Unverified List
-    ↓
-Admin Reviews & Approves Device
-    ↓
-User Can Now Access Protected Resources
-    ↓
-Device Verification Tracked in Audit Log
+```
+Register/Login → Device ID sent → Device added as unverified
+→ Admin approves device → User can access protected routes
 ```
 
-### Fee Payment Flow
+### Fee Payment
 
-```plaintext
-User Submits Payment
-    ↓
-Transaction Status: PENDING
-    ↓
-Payment Proof Stored
-    ↓
-Admin Reviews Transaction
-    ↓
-Admin Approves/Rejects
-    ↓
-Balance Updated (if approved)
-    ↓
-Email Notification Sent
+```
+Admin charges fee → Student sees unpaid fee on portal
+→ Student submits payment with proof → Admin reviews
+→ Admin approves → Balance updated
 ```
 
-### Student Grade Update
+### Student Auto-Link
 
-```plaintext
-Teacher Accesses Student Profile
-    ↓
-Enters Grade & Score
-    ↓
-System Validates Score (0-100)
-    ↓
-Grade Stored in Database
-    ↓
-Parent/Student Can View in Dashboard
-    ↓
-Audit Log Tracks Change
+```
+Admin creates student record
+→ Student registers on client portal (same name)
+→ On login, system auto-matches student record by name
+→ studentProfile linked automatically
+→ Timetable, grades, attendance all resolve correctly
 ```
 
-### Invite + Auto-Link Onboarding
+### Invite-Based Onboarding
 
-```plaintext
-Admin Creates Student Record
-    ↓
-Admin Sends Registration Invite (/api/students/:id/send-invite)
-    ↓
-Parent/Student Opens Invite Link
-    ↓
-Client Registers with inviteToken
-    ↓
-Account Auto-Linked to Student Profile
-    ↓
-Device Still Requires Admin Verification
+```
+Admin creates student → Admin sends invite email
+→ Parent/student registers with invite token
+→ Account auto-linked to student record
+→ Device still requires admin verification
 ```
 
-### Session Inactivity Behavior
+### Session Inactivity
 
-```plaintext
-Access Token (short-lived, default 15m)
-    ↓
-Frontend uses refresh cookie at /api/auth/refresh
-    ↓
-Refresh token rotates on each refresh
-    ↓
-If inactive beyond SESSION_IDLE_TIMEOUT_MINUTES, session is revoked
+```
+Access token (15 min) → Frontend refreshes via cookie
+→ Refresh token rotates on each use
+→ Idle > SESSION_IDLE_TIMEOUT_MINUTES → session revoked
+→ User must log in again
 ```
 
-## Demo Flow (Submission)
-
-Use this sequence during demo to show the improved onboarding path:
-
-1. Admin creates a student (`POST /api/students`).
-2. Admin sends invite (`POST /api/students/:id/send-invite`) with parent email.
-3. Parent registers from invite token (`POST /api/auth/register` with `inviteToken`).
-4. Admin verifies device (`PATCH /api/devices/:userId/:deviceId/verify`).
-5. Parent logs in (`POST /api/auth/login`) and views linked child records.
-6. Leave session idle past `SESSION_IDLE_TIMEOUT_MINUTES`, then show refresh failure and re-login.
-
-## Database Schema Highlights
-
-### Key Collections
-
-- **AdminUsers** - Staff and admin accounts
-- **Users (Client)** - Parents and student accounts
-- **Students** - Academic profiles with grades and attendance
-- **Classes** - Class definitions with teacher assignments
-- **FeeTransactions** - Payment and refund records
-- **AuditLogs** - Activity tracking for compliance
+---
 
 ## Troubleshooting
 
-### MongoDB Connection Error
+**MongoDB connection refused**
+Ensure MongoDB is running. Check `MONGO_URI` in `.env`.
 
-```plaintext
-Error: connect ECONNREFUSED
-```
+**Device not verified**
+Admin must approve the device in the Device Verification section of the admin portal.
 
-**Solution**: Ensure MongoDB is running locally or update MONGO_URI in .env
+**Timetable not showing**
+The student account must be linked to a student record. This happens automatically on login if the student was created by admin with the same first and last name. If it still doesn't show, use the "Link Account" page in the client portal to submit a linking request.
 
-### JWT Token Expired
+**JWT token expired**
+Access tokens expire after 15 minutes. The frontend refreshes them automatically. If the session is idle for more than 30 minutes, log in again.
 
-```plaintext
-Error: Invalid or expired token
-```
-
-**Solution**: Log in again. Access token refresh is automatic, but sessions expire after inactivity timeout.
-
-### Device Not Verified
-
-```plaintext
-Error: Device not verified. Please wait for admin approval.
-```
-
-**Solution**: Admin must verify device in Device Verification section
-
-### Rate Limit Exceeded
-
-```plaintext
-Error: Too many requests, please try again later.
-```
-
-**Solution**: Wait 15 minutes or increase RATE_LIMIT_MAX in .env
-
-## Implementation Summary
-
-The project was completed from a near-finished state to full compliance with the practical test requirements.
-
-### Completed Work
-
-- Added backend `.env.example` files for both applications
-- Added Jest configuration and 26 test cases across authentication, devices, and students
-- Added consolidated API documentation for admin and client endpoints
-- Added this consolidated README with setup, architecture, testing, and troubleshooting guidance
-- Added backend documentation comments across core server, middleware, model, service, and controller files
-
-### Completion Status
-
-- Core requirements: 8/8 met
-- Bonus requirements: 6/8 met
-- Critical fixes: 1/1 met
-- Documentation: consolidated into the remaining markdown files
-
-### Documentation Consolidation
-
-Primary documentation is now streamlined to:
-
-- `README.md` (this consolidated file)
-- `school-admin/README.md` (admin app details)
-- `school-client/README.md` (client app details)
-
-## Commit Message Convention
-
-```plaintext
-feat: add login flow
-fix: validate password strength
-refactor: simplify fee service
-test: add auth tests
-docs: update API documentation
-```
-
-## Code Quality
-
-- **Linting**: ESLint configured (implicit via structure)
-- **Formatting**: Consistent indentation and naming
-- **Testing**: Jest with >30 test cases
-- **Error Handling**: Comprehensive error responses
-- **Security**: Rate limiting, input validation, CORS
-
-## License
-
-This project is part of the Elevanda Ventures Software Developer Practical Test.
-
-## Support
-
-For issues or questions:
-
-- Check Swagger docs at `http://localhost:5002/api-docs` and `http://localhost:5001/api-docs`
-- Review the testing and troubleshooting sections in this README
-- Check application-level guides in `school-admin/README.md` and `school-client/README.md`
+**Rate limit exceeded**
+Wait 15 minutes or increase `RATE_LIMIT_MAX` in `.env`.
 
 ---
+
+## Bonus Features Implemented
+
+- Swagger API documentation on both backends
+- Dockerized setup with Nginx for both apps
+- Teacher-scoped views (classes, students, grades, attendance)
+- Fee schedule templates with reusable definitions
+- Bulk fee charging per class
+- Edit and delete pending fee charges
+- Student promotion between classes
+- Audit logging
+- Inactivity session timeout
+- In-app alerts (low balance, pending payments, device status)
+
+---
+
+## Commit Convention
+
+```
+feat: add login flow
+fix: resolve timetable population error
+refactor: extract findStudent helper
+docs: update README
+```
+
+---
+
+*Elevanda Ventures – Empowering Education Through Technology*
+*Kigali, Rwanda | careers@elevandaventures.com*

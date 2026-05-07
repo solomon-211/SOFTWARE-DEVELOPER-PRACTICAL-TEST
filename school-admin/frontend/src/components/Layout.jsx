@@ -7,12 +7,13 @@ import {
 } from 'lucide-react'
 import { logout, getStoredUser } from '../services/authService'
 
+// Sidebar navigation items differ by role — teachers see a reduced set.
 const adminNav = [
   { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/devices',        icon: Smartphone,      label: 'Device Verification' },
   { to: '/linking',        icon: Link2,           label: 'Linking Requests' },
   { to: '/students',       icon: GraduationCap,   label: 'Students' },
-  { to: '/bulk-attendance',icon: CalendarCheck,   label: 'Bulk Attendance' },
+  { to: '/bulk-attendance',icon: CalendarCheck,   label: 'Attendance History' },
   { to: '/promote',        icon: ArrowUpCircle,   label: 'Promote Students' },
   { to: '/classes',        icon: School,          label: 'Classes' },
   { to: '/teachers',       icon: Users,           label: 'Teachers & Staff' },

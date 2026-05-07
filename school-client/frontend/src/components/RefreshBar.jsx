@@ -2,16 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 
-/**
- * Shows last-updated time and a manual refresh button.
- * Pass `queryKeys` array to invalidate specific queries on refresh.
- */
 export default function RefreshBar({ queryKeys = [] }) {
   const qc = useQueryClient()
   const [lastUpdated, setLastUpdated] = useState(new Date())
   const [spinning, setSpinning] = useState(false)
 
-  // Update timestamp every minute
   useEffect(() => {
     const id = setInterval(() => setLastUpdated(prev => prev), 60000)
     return () => clearInterval(id)

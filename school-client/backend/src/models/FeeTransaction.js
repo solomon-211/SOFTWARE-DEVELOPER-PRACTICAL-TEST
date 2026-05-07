@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const feeTransactionSchema = new mongoose.Schema(
   {
     student:     { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
-    type:        { type: String, enum: ['deposit', 'withdrawal'], required: true },
+    type:        { type: String, enum: ['deposit', 'withdrawal', 'charge'], required: true },
     amount:      { type: Number, required: true, min: 0.01 },
     description: { type: String, trim: true },
     // Payment proof — either a URL link or a base64-encoded file reference

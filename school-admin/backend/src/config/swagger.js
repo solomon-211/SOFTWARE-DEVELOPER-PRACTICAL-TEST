@@ -1,3 +1,4 @@
+// Swagger/OpenAPI spec — auto-generated from JSDoc annotations in route files.
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const options = {

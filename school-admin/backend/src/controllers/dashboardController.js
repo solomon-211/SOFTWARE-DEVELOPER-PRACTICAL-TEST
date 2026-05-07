@@ -1,3 +1,4 @@
+// Returns aggregated stats for the admin dashboard (students, fees, devices, attendance).
 const { getDashboardStats } = require('../services/dashboardService');
 
 const getStats = async (req, res, next) => {

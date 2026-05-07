@@ -13,26 +13,27 @@ import TimetablePage        from './pages/TimetablePage'
 import ProfilePage          from './pages/ProfilePage'
 import LinkingRequestPage   from './pages/LinkingRequestPage'
 
-// Central route map for the client portal.
-// Defines the client portal routes and protects account-specific screens.
+// Client portal routes — all protected routes require authentication.
+// Unauthenticated users are redirected to /login by ProtectedRoute.
 export default function App() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public routes — no authentication required */}
       <Route path="/login"           element={<LoginPage />} />
       <Route path="/register"        element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password"  element={<ResetPasswordPage />} />
 
-      {/* Protected routes */}
-      <Route path="/dashboard"  element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/fees"       element={<ProtectedRoute><FeesPage /></ProtectedRoute>} />
-      <Route path="/grades"     element={<ProtectedRoute><GradesPage /></ProtectedRoute>} />
-      <Route path="/attendance" element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
-      <Route path="/timetable"  element={<ProtectedRoute><TimetablePage /></ProtectedRoute>} />
-      <Route path="/profile"    element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      {/* Protected routes — require a verified session */}
+      <Route path="/dashboard"    element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/fees"         element={<ProtectedRoute><FeesPage /></ProtectedRoute>} />
+      <Route path="/grades"       element={<ProtectedRoute><GradesPage /></ProtectedRoute>} />
+      <Route path="/attendance"   element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
+      <Route path="/timetable"    element={<ProtectedRoute><TimetablePage /></ProtectedRoute>} />
+      <Route path="/profile"      element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/link-account" element={<ProtectedRoute><LinkingRequestPage /></ProtectedRoute>} />
 
+      {/* Fallback — redirect unknown paths to dashboard */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

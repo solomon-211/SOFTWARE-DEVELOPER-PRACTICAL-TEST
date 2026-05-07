@@ -12,7 +12,7 @@ const toPublicUser = (user) => ({
   role:           user.role,
   studentProfile: user.studentProfile || null,   // student's academic record ID
   children:       user.children || [],            // parent's linked student IDs
-  devices:        user.devices.map((d) => ({
+  devices:        (user.devices || []).map((d) => ({
     deviceId:     d.deviceId,
     deviceName:   d.deviceName,
     verified:     d.verified,
@@ -60,4 +60,14 @@ const toTransaction = (tx) => ({
   processedAt:   tx.processedAt,
 });
 
-module.exports = { toPublicUser, toStudentProfile, toGrades, toAttendance, toTransaction };
+const toLinkingRequest = (request) => ({
+  id:              request._id,
+  studentCode:     request.studentCode,
+  status:          request.status,
+  message:         request.message || null,
+  rejectionReason: request.rejectionReason || null,
+  submittedAt:     request.createdAt,
+  reviewedAt:      request.reviewedAt || null,
+});
+
+module.exports = { toPublicUser, toStudentProfile, toGrades, toAttendance, toTransaction, toLinkingRequest };

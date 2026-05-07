@@ -13,7 +13,7 @@ const LOW_BALANCE = 5000
 export default function DashboardPage() {
   const user = getStoredUser()
   // studentProfile can be an ObjectId string or null
-  const studentId = user?.studentProfile || user?.children?.[0] || null
+  const studentId = user?.studentProfile || user?.children?.[0] || user?.id || null
 
   const { data: feeData }    = useQuery({ queryKey: ['fees', studentId],       queryFn: () => getFeeInfo(studentId),    enabled: !!studentId })
   const { data: grades }     = useQuery({ queryKey: ['grades', studentId],     queryFn: () => getGrades(studentId),     enabled: !!studentId })
@@ -27,12 +27,33 @@ export default function DashboardPage() {
   const recentTx = feeData?.transactions?.slice(0, 5) || []
   const recentGr = grades?.slice(-4) || []
 
+  // Outstanding charges — admin-created fees the student hasn't paid yet
+  const outstanding = (feeData?.transactions || []).filter(
+    t => t.type === 'charge' && t.status === 'pending'
+  )
+  const totalOwed   = outstanding.reduce((s, t) => s + t.amount, 0)
+  const totalPaid   = (feeData?.transactions || [])
+    .filter(t => t.type === 'deposit' && t.status === 'approved')
+    .reduce((s, t) => s + t.amount, 0)
+
   return (
     <Layout title="Dashboard">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Welcome, {user?.firstName}</h1>
-          <p className="page-sub">Here's your school activity overview.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.25rem' }}>
+            <h1 className="page-title" style={{ marginBottom: 0 }}>Welcome, {user?.firstName}</h1>
+            <span style={{
+              fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem',
+              borderRadius: 20, textTransform: 'capitalize',
+              background: user?.role === 'parent' ? 'var(--primary-light)' : 'var(--success-light)',
+              color: user?.role === 'parent' ? 'var(--primary)' : 'var(--success)',
+            }}>
+              {user?.role}
+            </span>
+          </div>
+          <p className="page-sub">
+            {user?.role === 'parent' ? 'Parent portal' : 'Student portal'} — here's your school activity overview.
+          </p>
         </div>
       </div>
 
@@ -48,7 +69,26 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {isLow && studentId && (
+      {/* Outstanding fee alert — shown prominently when admin has charged fees */}
+      {outstanding.length > 0 && studentId && (
+        <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>
+          <AlertTriangle size={16} className="alert-icon" />
+          <div>
+            <strong>Unpaid fee{outstanding.length > 1 ? 's' : ''}:</strong>{' '}
+            You have been charged <strong>{totalOwed.toLocaleString()} RWF</strong> by the school.
+            {outstanding.map((t, i) => (
+              <span key={i} style={{ display: 'block', fontSize: '0.8125rem', marginTop: '0.2rem', color: 'var(--gray-700)' }}>
+                • {t.description} — {t.amount.toLocaleString()} RWF
+              </span>
+            ))}
+            {' '}<Link to="/fees" style={{ fontWeight: 600, textDecoration: 'underline', display: 'inline-block', marginTop: '0.375rem' }}>
+              Pay Now →
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {isLow && outstanding.length === 0 && studentId && (
         <div className="alert alert-warning">
           <AlertTriangle size={16} className="alert-icon" />
           <div>
@@ -61,11 +101,13 @@ export default function DashboardPage() {
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', alignItems: 'stretch' }}>
         <div className="stat-card" style={{ alignItems: 'stretch', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-            <div className={`stat-icon ${isLow ? 'stat-icon-danger' : 'stat-icon-success'}`}><Wallet size={20} /></div>
+            <div className={`stat-icon ${outstanding.length > 0 ? 'stat-icon-danger' : 'stat-icon-success'}`}><Wallet size={20} /></div>
             <div className="stat-content">
-              <div className="stat-label">Fee Balance</div>
-              <div className="stat-value" style={{ color: isLow ? 'var(--danger)' : 'var(--success)' }}>{balance.toLocaleString()}</div>
-              <div className="stat-sub">RWF</div>
+              <div className="stat-label">Outstanding Fees</div>
+              <div className="stat-value" style={{ color: outstanding.length > 0 ? 'var(--danger)' : 'var(--success)' }}>{totalOwed.toLocaleString()}</div>
+              <div className="stat-sub" style={{ color: outstanding.length > 0 ? 'var(--danger)' : undefined }}>
+                {outstanding.length > 0 ? `${outstanding.length} unpaid fee${outstanding.length > 1 ? 's' : ''}` : 'All fees paid ✓'}
+              </div>
             </div>
           </div>
         </div>
@@ -161,3 +203,4 @@ export default function DashboardPage() {
     </Layout>
   )
 }
+

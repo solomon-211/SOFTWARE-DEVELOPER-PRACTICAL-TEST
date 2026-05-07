@@ -19,18 +19,18 @@ import PromotePage           from './pages/PromotePage'
 export default function App() {
   return (
     <Routes>
-      {/* Public */}
+      {/* Public routes — no authentication required */}
       <Route path="/login"          element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password"  element={<ResetPasswordPage />} />
 
-      {/* Admin + Teacher */}
+      {/* Shared routes — accessible to admins and teachers */}
       <Route path="/dashboard"       element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/students"        element={<ProtectedRoute><StudentsPage /></ProtectedRoute>} />
       <Route path="/classes"         element={<ProtectedRoute><ClassesPage /></ProtectedRoute>} />
       <Route path="/bulk-attendance" element={<ProtectedRoute><BulkAttendancePage /></ProtectedRoute>} />
 
-      {/* Admin only */}
+      {/* Admin-only routes */}
       <Route path="/devices"         element={<ProtectedRoute roles={['admin']}><DevicesPage /></ProtectedRoute>} />
       <Route path="/teachers"        element={<ProtectedRoute roles={['admin']}><TeachersPage /></ProtectedRoute>} />
       <Route path="/fees"            element={<ProtectedRoute roles={['admin']}><FeesPage /></ProtectedRoute>} />
@@ -39,6 +39,7 @@ export default function App() {
       <Route path="/linking"         element={<ProtectedRoute roles={['admin']}><LinkingRequestsPage /></ProtectedRoute>} />
       <Route path="/promote"         element={<ProtectedRoute roles={['admin']}><PromotePage /></ProtectedRoute>} />
 
+      {/* Fallback — redirect unknown paths to dashboard */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

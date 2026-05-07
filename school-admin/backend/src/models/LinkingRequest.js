@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+// Tracks parent/student requests to link their account to a student record.
+// Admin reviews and approves or rejects each request.
 const linkingRequestSchema = new mongoose.Schema({
   user:            { type: mongoose.Schema.Types.ObjectId, ref: 'ClientUser', required: true },
   student:         { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },

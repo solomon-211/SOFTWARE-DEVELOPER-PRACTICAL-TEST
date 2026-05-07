@@ -13,7 +13,7 @@ const gradeColor = (score) => {
 
 export default function GradesPage() {
   const user = getStoredUser();
-  const studentId = user?.studentProfile || user?.children?.[0] || null
+  const studentId = user?.studentProfile || user?.children?.[0] || user?.id || null
 
   const { data: grades, isLoading } = useQuery({
     queryKey: ['grades', studentId],
@@ -102,4 +102,5 @@ export default function GradesPage() {
     </Layout>
   );
 }
+
 

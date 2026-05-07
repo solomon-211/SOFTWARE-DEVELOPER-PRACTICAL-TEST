@@ -1,3 +1,5 @@
+// Student routes — all require authentication; admin-only routes are marked explicitly.
+// Static routes are declared before /:id to avoid path conflicts.
 const express = require('express');
 const { body, param } = require('express-validator');
 const {
@@ -11,12 +13,12 @@ const validate = require('../middlewares/validate');
 const router = express.Router();
 router.use(protect, staffOnly);
 
-// ── Static routes FIRST (before /:id to avoid conflicts) ─────────────────────
+// ── Static routes (must come before /:id) ────────────────────────────────────
 
 router.get('/',               getAllStudents);
-router.get('/unlinked-users', getUnlinkedUsers);
+router.get('/unlinked-users', getUnlinkedUsers); // Users not yet linked to a student record
 
-// Bulk attendance — must be before /:id routes
+// Mark attendance for all students in a class at once
 router.post('/bulk-attendance',
   [
     body('classId').isMongoId().withMessage('Valid class ID required'),
@@ -27,7 +29,7 @@ router.post('/bulk-attendance',
   ],
   validate, bulkMarkAttendance);
 
-// Promote — must be before /:id routes
+// Move all active students from one class to another (end-of-year promotion)
 router.post('/promote', adminOnly,
   [
     body('fromClassId').isMongoId().withMessage('Valid fromClassId required'),
@@ -35,7 +37,7 @@ router.post('/promote', adminOnly,
   ],
   validate, promoteStudents);
 
-// Create student
+// Create a new student record
 router.post('/', adminOnly,
   [
     body('studentCode').trim().notEmpty(),
@@ -44,7 +46,7 @@ router.post('/', adminOnly,
   ],
   validate, createStudent);
 
-// ── Dynamic /:id routes AFTER static routes ───────────────────────────────────
+// ── Dynamic /:id routes ───────────────────────────────────────────────────────
 
 router.get('/:id',  [param('id').isMongoId()], validate, getStudent);
 router.put('/:id',  adminOnly,
@@ -73,10 +75,12 @@ router.put('/:id',  adminOnly,
   ],
   validate, updateStudent);
 
+// Link a student record to an existing client user account by email
 router.patch('/:id/link-account', adminOnly,
   [param('id').isMongoId(), body('email').isEmail().normalizeEmail()],
   validate, linkUserAccount);
 
+// Send a registration invite email so the parent/student can self-register and auto-link
 router.post('/:id/send-invite', adminOnly,
   [
     param('id').isMongoId(),

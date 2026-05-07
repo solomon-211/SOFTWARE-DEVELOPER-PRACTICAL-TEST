@@ -8,7 +8,6 @@ import './styles/global.css'
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000
 
-// Idle timeout keeps the client session short-lived and clears auth on inactivity.
 function SessionExpiryWatcher() {
   React.useEffect(() => {
     let timerId
@@ -49,7 +48,7 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <SessionExpiryWatcher />
         <App />
       </BrowserRouter>

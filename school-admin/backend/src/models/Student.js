@@ -34,7 +34,7 @@ const studentSchema = new mongoose.Schema(
     // Link to parent/student account
     userId: { 
       type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User'        // Reference to User model (for client app accounts)
+      ref: 'ClientUser'  // References the ClientUser model (parent/student portal accounts)
     },
     // Registration invite metadata for parent/student onboarding.
     invite: {

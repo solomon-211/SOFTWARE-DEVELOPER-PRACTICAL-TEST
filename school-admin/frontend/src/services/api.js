@@ -1,8 +1,8 @@
+// Axios instance pre-configured for the admin API.
+// Request interceptor attaches the JWT from sessionStorage.
+// Response interceptor redirects to /login on 401.
 import axios from 'axios';
 
-// Axios instance for the admin API.
-// Attaches the admin JWT token to every request automatically.
-// On 401, clears the session and redirects to login.
 const api = axios.create({
   baseURL: '/api',
   timeout: 10000,

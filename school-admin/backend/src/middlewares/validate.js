@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 
+// Reads express-validator results and returns 422 with field errors if validation failed.
 const validate = (req, res, next) => {
   const errors = validationResult(req);
 

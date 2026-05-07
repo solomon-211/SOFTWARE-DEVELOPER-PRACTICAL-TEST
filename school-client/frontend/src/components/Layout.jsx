@@ -7,7 +7,6 @@ import {
 import { logout } from '../services/authService'
 import { getStoredUser } from '../utils/auth'
 
-// Shared shell for authenticated client pages.
 const navItems = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/fees',         icon: CreditCard,      label: 'Fees' },
@@ -21,6 +20,7 @@ const navItems = [
 export default function Layout({ children, title }) {
   const user = getStoredUser()
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'U'
+  const roleLabel = user?.role === 'student' ? 'Student' : user?.role === 'parent' ? 'Parent' : 'Portal'
 
   return (
     <div className="layout">
@@ -31,7 +31,7 @@ export default function Layout({ children, title }) {
           </div>
           <div>
             <div className="sidebar-logo-text">SchoolPortal</div>
-            <div className="sidebar-logo-sub">Student & Parent Access</div>
+            <div className="sidebar-logo-sub">{roleLabel} Portal</div>
           </div>
         </div>
 
@@ -53,7 +53,7 @@ export default function Layout({ children, title }) {
             <div className="sidebar-avatar">{initials}</div>
             <div>
               <div className="sidebar-user-name">{user?.firstName} {user?.lastName}</div>
-              <div className="sidebar-user-role">{user?.role}</div>
+              <div className="sidebar-user-role" style={{ textTransform: 'capitalize' }}>{user?.role}</div>
             </div>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={logout}

@@ -1,12 +1,15 @@
+// Password reset service — generates reset tokens and applies new passwords.
 const crypto = require('crypto');
 const AdminUser = require('../models/AdminUser');
 const PasswordReset = require('../models/PasswordReset');
 const { notify } = require('./emailService');
 
+// Creates a 1-hour reset token and emails the link. Silent if email not found (prevents enumeration).
 const requestReset = async (email) => {
   const user = await AdminUser.findOne({ email: email.toLowerCase().trim() });
-  if (!user) return; // silent — prevent enumeration
+  if (!user) return;
 
+  // Remove any existing tokens before creating a new one
   await PasswordReset.deleteMany({ userId: user._id });
 
   const token     = crypto.randomBytes(32).toString('hex');
@@ -18,6 +21,7 @@ const requestReset = async (email) => {
   await notify.staffPasswordReset(user, resetUrl);
 };
 
+// Validates the token, updates the password hash, and marks the token as used.
 const resetPassword = async (token, newPassword) => {
   const record = await PasswordReset.findOne({ token, used: false });
   if (!record || record.expiresAt < new Date()) {

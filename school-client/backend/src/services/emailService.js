@@ -1,9 +1,5 @@
 const nodemailer = require('nodemailer');
 
-/**
- * Nodemailer transporter.
- * Falls back to Ethereal (fake SMTP) in development if no SMTP config is set.
- */
 let transporter;
 
 const getTransporter = async () => {
@@ -20,7 +16,6 @@ const getTransporter = async () => {
       },
     });
   } else {
-    // Development fallback — logs email to console instead of sending
     transporter = {
       sendMail: async (opts) => {
         console.log('\n📧 [EMAIL - not sent, no SMTP config]');
@@ -37,18 +32,12 @@ const getTransporter = async () => {
 
 const FROM = process.env.EMAIL_FROM || 'SchoolPortal <no-reply@school.rw>';
 
-/**
- * Send a generic email.
- */
 const sendEmail = async ({ to, subject, html, text }) => {
   const t = await getTransporter();
   return t.sendMail({ from: FROM, to, subject, html, text });
 };
 
-// ── Notification templates ────────────────────────────────────────────────────
-
 const notify = {
-  /** Device verified — sent to parent/student */
   deviceVerified: (user) => sendEmail({
     to:      user.email,
     subject: 'Your device has been verified — SchoolPortal',
@@ -58,7 +47,6 @@ const notify = {
     text: `Hi ${user.firstName}, your device has been verified. You can now log in to SchoolPortal.`,
   }),
 
-  /** Payment approved */
   paymentApproved: (user, amount) => sendEmail({
     to:      user.email,
     subject: 'Payment Approved — SchoolPortal',
@@ -67,7 +55,6 @@ const notify = {
     text: `Hi ${user.firstName}, your payment of ${Number(amount).toLocaleString()} RWF has been approved.`,
   }),
 
-  /** Payment rejected */
   paymentRejected: (user, amount) => sendEmail({
     to:      user.email,
     subject: 'Payment Rejected — SchoolPortal',
@@ -76,7 +63,6 @@ const notify = {
     text: `Hi ${user.firstName}, your payment of ${Number(amount).toLocaleString()} RWF was rejected.`,
   }),
 
-  /** Refund approved */
   refundApproved: (user, amount) => sendEmail({
     to:      user.email,
     subject: 'Refund Approved — SchoolPortal',
@@ -85,7 +71,6 @@ const notify = {
     text: `Hi ${user.firstName}, your refund of ${Number(amount).toLocaleString()} RWF has been approved.`,
   }),
 
-  /** Grades updated */
   gradesUpdated: (user, subject, term) => sendEmail({
     to:      user.email,
     subject: `Grades Updated: ${subject} — SchoolPortal`,
@@ -94,7 +79,6 @@ const notify = {
     text: `Hi ${user.firstName}, your grades for ${subject} (${term}) have been updated.`,
   }),
 
-  /** Password reset */
   passwordReset: (user, resetUrl) => sendEmail({
     to:      user.email,
     subject: 'Reset Your Password — SchoolPortal',
@@ -105,7 +89,6 @@ const notify = {
     text: `Hi ${user.firstName}, reset your password here: ${resetUrl}`,
   }),
 
-  /** Parent linking request approved */
   linkingApproved: (user, studentName) => sendEmail({
     to:      user.email,
     subject: 'Child Account Linked — SchoolPortal',

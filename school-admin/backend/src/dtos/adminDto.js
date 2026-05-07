@@ -1,8 +1,3 @@
-/**
- * DTOs for the admin application.
- * Omit sensitive fields before sending to the frontend.
- */
-
 const toAdminUser = (user) => ({
   id:              user._id,
   firstName:       user.firstName,
@@ -21,7 +16,7 @@ const toClientUser = (user) => ({
   email:     user.email,
   phone:     user.phone,
   role:      user.role,
-  devices:   user.devices.map((d) => ({
+  devices:   (user.devices || []).map((d) => ({
     deviceId:     d.deviceId,
     deviceName:   d.deviceName,
     verified:     d.verified,
@@ -43,6 +38,55 @@ const toStudent = (student) => ({
   feeBalance:  student.feeBalance,
   isActive:    student.isActive,
   createdAt:   student.createdAt,
+  // Include grades so the teacher list view can show them inline
+  grades:      (student.grades || []).map((g) => ({
+    subject:   g.subject,
+    score:     g.score,
+    grade:     g.grade,
+    term:      g.term,
+    updatedAt: g.updatedAt,
+  })),
+});
+
+const toStudentProfile = (student) => ({
+  id:          student._id,
+  studentCode: student.studentCode,
+  firstName:   student.firstName,
+  lastName:    student.lastName,
+  dateOfBirth: student.dateOfBirth,
+  gender:      student.gender,
+  class:       student.class
+    ? {
+        id:      student.class._id || student.class,
+        name:    student.class.name,
+        grade:   student.class.grade,
+        section: student.class.section,
+      }
+    : null,
+  userId:      student.userId
+    ? {
+        id:        student.userId._id || student.userId,
+        firstName: student.userId.firstName,
+        lastName:  student.userId.lastName,
+        email:     student.userId.email,
+      }
+    : null,
+  grades:      (student.grades || []).map((grade) => ({
+    subject:   grade.subject,
+    score:     grade.score,
+    grade:     grade.grade,
+    term:      grade.term,
+    updatedBy: grade.updatedBy,
+    updatedAt: grade.updatedAt,
+  })),
+  attendance:  (student.attendance || []).map((record) => ({
+    date:     record.date,
+    status:   record.status,
+    markedBy: record.markedBy,
+  })),
+  feeBalance:  student.feeBalance,
+  isActive:    student.isActive,
+  createdAt:   student.createdAt,
 });
 
 const toClass = (cls) => ({
@@ -50,7 +94,6 @@ const toClass = (cls) => ({
   name:         cls.name,
   grade:        cls.grade,
   section:      cls.section,
-  // Array of { teacher: { id, firstName, lastName, email }, subject }
   teachers:     (cls.teachers || []).map((t) => ({
     subject: t.subject,
     teacher: t.teacher
@@ -62,7 +105,23 @@ const toClass = (cls) => ({
         }
       : null,
   })),
-  timetable:    cls.timetable || [],
+  timetable: (cls.timetable || []).map((slot) => ({
+    day:       slot.day,
+    subject:   slot.subject,
+    startTime: slot.startTime,
+    endTime:   slot.endTime,
+    room:      slot.room || null,
+    // teacher is populated when available, stored as ObjectId otherwise
+    teacher: slot.teacher && typeof slot.teacher === 'object' && slot.teacher.firstName
+      ? {
+          id:        slot.teacher._id,
+          firstName: slot.teacher.firstName,
+          lastName:  slot.teacher.lastName,
+        }
+      : slot.teacher
+        ? { id: slot.teacher }
+        : null,
+  })),
   academicYear: cls.academicYear,
   isActive:     cls.isActive,
 });
@@ -82,4 +141,17 @@ const toTransaction = (tx) => ({
   createdAt:     tx.createdAt,
 });
 
-module.exports = { toAdminUser, toClientUser, toStudent, toClass, toTransaction };
+const toAuditLog = (log) => ({
+  id:         log._id,
+  actor:      log.actor,
+  actorModel: log.actorModel,
+  actorName:  log.actorName,
+  action:     log.action,
+  target:     log.target,
+  before:     log.before,
+  after:      log.after,
+  ip:         log.ip || null,
+  createdAt:  log.createdAt,
+});
+
+module.exports = { toAdminUser, toClientUser, toStudent, toStudentProfile, toClass, toTransaction, toAuditLog };

@@ -2,33 +2,37 @@ import React, { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Wallet, ArrowDownCircle, ArrowUpCircle, Clock, CheckCircle,
-  XCircle, AlertTriangle, Receipt, Link2, Upload, FileText, Eye,
+  XCircle, AlertTriangle, Receipt, Link2, Upload, FileText, CreditCard,
 } from 'lucide-react'
 import { getStoredUser } from '../utils/auth'
 import { getFeeInfo, deposit, withdraw } from '../services/feeService'
 import Layout from '../components/Layout'
 import RefreshBar from '../components/RefreshBar'
 
-const LOW_BALANCE_THRESHOLD = 5000
-
 const statusConfig = {
-  approved: { label: 'Approved', badge: 'badge-success', icon: CheckCircle },
+  approved: { label: 'Paid',     badge: 'badge-success', icon: CheckCircle },
   pending:  { label: 'Pending',  badge: 'badge-warning', icon: Clock },
   rejected: { label: 'Rejected', badge: 'badge-danger',  icon: XCircle },
 }
 
+const chargeStatusConfig = {
+  pending:  { label: 'Unpaid',   badge: 'badge-danger',  icon: AlertTriangle },
+  approved: { label: 'Paid',     badge: 'badge-success', icon: CheckCircle },
+  rejected: { label: 'Cancelled',badge: 'badge-info',    icon: XCircle },
+}
+
 export default function FeesPage() {
   const user      = getStoredUser()
-  const studentId = user?.studentProfile || user?.children?.[0] || null
+  const studentId = user?.studentProfile || user?.children?.[0] || user?.id || null
   const qc        = useQueryClient()
   const fileRef   = useRef()
 
-  const [activeTab, setActiveTab] = useState('history')
-  const [form, setForm]     = useState({ amount: '', description: '' })
-  const [proofType, setProofType] = useState('link')   // 'link' | 'file'
+  const [activeTab, setActiveTab] = useState('overview')
+  const [form, setForm]       = useState({ amount: '', description: '' })
+  const [proofType, setProofType] = useState('link')
   const [proofLink, setProofLink] = useState('')
-  const [proofFile, setProofFile] = useState(null)     // { name, base64, mimeType }
-  const [msg, setMsg]       = useState({ type: '', text: '' })
+  const [proofFile, setProofFile] = useState(null)
+  const [msg, setMsg]         = useState({ type: '', text: '' })
 
   const { data, isLoading } = useQuery({
     queryKey:        ['fees', studentId],
@@ -37,44 +41,27 @@ export default function FeesPage() {
     refetchInterval: 15000,
   })
 
-  // Convert file to base64 for storage
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
     const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
-    if (!allowed.includes(file.type)) {
-      setMsg({ type: 'danger', text: 'Only PDF, JPG, or PNG files are accepted.' })
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setMsg({ type: 'danger', text: 'File must be under 5MB.' })
-      return
-    }
+    if (!allowed.includes(file.type)) { setMsg({ type: 'danger', text: 'Only PDF, JPG, or PNG files are accepted.' }); return }
+    if (file.size > 5 * 1024 * 1024) { setMsg({ type: 'danger', text: 'File must be under 5MB.' }); return }
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      setProofFile({ name: file.name, base64: ev.target.result, mimeType: file.type })
-    }
+    reader.onload = (ev) => setProofFile({ name: file.name, base64: ev.target.result, mimeType: file.type })
     reader.readAsDataURL(file)
   }
 
   const buildProof = () => {
-    if (proofType === 'link') {
-      if (!proofLink.trim()) return null
-      return { type: 'link', value: proofLink.trim() }
-    }
-    if (!proofFile) return null
-    return { type: 'file', value: proofFile.base64, mimeType: proofFile.mimeType }
+    if (proofType === 'link') return proofLink.trim() ? { type: 'link', value: proofLink.trim() } : null
+    return proofFile ? { type: 'file', value: proofFile.base64, mimeType: proofFile.mimeType } : null
   }
 
   const depositMut = useMutation({
-    mutationFn: () => {
-      const proof = buildProof()
-      return deposit(studentId, Number(form.amount), form.description, proof)
-    },
+    mutationFn: () => deposit(studentId, Number(form.amount), form.description, buildProof()),
     onSuccess: () => {
-      setMsg({ type: 'success', text: 'Payment submitted with proof. Awaiting admin verification.' })
-      setForm({ amount: '', description: '' })
-      setProofLink(''); setProofFile(null)
+      setMsg({ type: 'success', text: 'Payment submitted. Awaiting admin verification.' })
+      setForm({ amount: '', description: '' }); setProofLink(''); setProofFile(null)
       if (fileRef.current) fileRef.current.value = ''
       qc.invalidateQueries(['fees', studentId])
     },
@@ -91,9 +78,15 @@ export default function FeesPage() {
     onError: (err) => setMsg({ type: 'danger', text: err.response?.data?.message || 'Request failed.' }),
   })
 
-  const balance = data?.balance ?? 0
-  const isLow   = balance < LOW_BALANCE_THRESHOLD
-  const pending = data?.transactions?.filter(t => t.status === 'pending').length || 0
+  // Separate transaction types
+  const allTx       = data?.transactions || []
+  const charges     = allTx.filter(t => t.type === 'charge')
+  const payments    = allTx.filter(t => t.type === 'deposit')
+  const refunds     = allTx.filter(t => t.type === 'withdrawal')
+  const unpaidCharges = charges.filter(t => t.status === 'pending')
+  const totalOwed   = unpaidCharges.reduce((s, t) => s + t.amount, 0)
+  const totalPaid   = payments.filter(t => t.status === 'approved').reduce((s, t) => s + t.amount, 0)
+  const pendingPayments = payments.filter(t => t.status === 'pending').length
 
   if (!studentId) {
     return (
@@ -108,64 +101,82 @@ export default function FeesPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Fee Management</h1>
-          <p className="page-sub">View your balance, make payments, and request refunds.</p>
+          <p className="page-sub">View your outstanding fees, make payments, and track your history.</p>
         </div>
       </div>
 
       <RefreshBar queryKeys={[['fees', studentId]]} />
 
-      {isLow && (
-        <div className="alert alert-warning">
+      {/* ── Outstanding fee alert ─────────────────────────────────────────── */}
+      {unpaidCharges.length > 0 && (
+        <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>
           <AlertTriangle size={16} className="alert-icon" />
-          Low balance: <strong>{balance.toLocaleString()} RWF</strong>. Please make a payment soon.
-        </div>
-      )}
-      {pending > 0 && (
-        <div className="alert alert-info">
-          <Clock size={16} className="alert-icon" />
-          You have <strong>{pending}</strong> transaction{pending > 1 ? 's' : ''} awaiting admin review.
+          <div>
+            <strong>You have {unpaidCharges.length} unpaid fee{unpaidCharges.length > 1 ? 's' : ''} totalling {totalOwed.toLocaleString()} RWF.</strong>
+            {unpaidCharges.map((t, i) => (
+              <span key={i} style={{ display: 'block', fontSize: '0.8125rem', marginTop: '0.2rem' }}>
+                • {t.description} — {t.amount.toLocaleString()} RWF
+              </span>
+            ))}
+            <button className="btn btn-sm btn-danger" style={{ marginTop: '0.5rem' }}
+              onClick={() => { setActiveTab('pay'); setForm({ amount: String(unpaidCharges[0]?.amount || ''), description: `Payment for: ${unpaidCharges[0]?.description || ''}` }) }}>
+              Pay Now
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Balance summary */}
+      {pendingPayments > 0 && (
+        <div className="alert alert-info" style={{ marginBottom: '1rem' }}>
+          <Clock size={16} className="alert-icon" />
+          You have <strong>{pendingPayments}</strong> payment{pendingPayments > 1 ? 's' : ''} awaiting admin verification.
+        </div>
+      )}
+
+      {/* ── Summary cards ─────────────────────────────────────────────────── */}
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '1.5rem' }}>
         <div className="stat-card">
-          <div className={`stat-icon ${isLow ? 'stat-icon-danger' : 'stat-icon-success'}`}><Wallet size={20} /></div>
+          <div className={`stat-icon ${unpaidCharges.length > 0 ? 'stat-icon-danger' : 'stat-icon-success'}`}>
+            <CreditCard size={20} />
+          </div>
           <div className="stat-content">
-            <div className="stat-label">Current Balance</div>
-            <div className="stat-value" style={{ color: isLow ? 'var(--danger)' : 'var(--success)' }}>
-              {balance.toLocaleString()}
+            <div className="stat-label">Outstanding Fees</div>
+            <div className="stat-value" style={{ color: unpaidCharges.length > 0 ? 'var(--danger)' : 'var(--success)' }}>
+              {totalOwed.toLocaleString()}
             </div>
-            <div className="stat-sub">RWF</div>
+            <div className="stat-sub" style={{ color: unpaidCharges.length > 0 ? 'var(--danger)' : 'var(--gray-400)' }}>
+              {unpaidCharges.length > 0 ? `${unpaidCharges.length} unpaid fee${unpaidCharges.length > 1 ? 's' : ''}` : 'All fees paid'}
+            </div>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon stat-icon-success"><ArrowDownCircle size={20} /></div>
           <div className="stat-content">
-            <div className="stat-label">Total Approved</div>
-            <div className="stat-value">
-              {(data?.transactions?.filter(t => t.type === 'deposit' && t.status === 'approved')
-                .reduce((s, t) => s + t.amount, 0) || 0).toLocaleString()}
-            </div>
-            <div className="stat-sub">RWF deposited</div>
+            <div className="stat-label">Total Paid</div>
+            <div className="stat-value" style={{ color: 'var(--success)' }}>{totalPaid.toLocaleString()}</div>
+            <div className="stat-sub">RWF approved</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon stat-icon-warning"><Clock size={20} /></div>
+          <div className={`stat-icon ${pendingPayments > 0 ? 'stat-icon-warning' : 'stat-icon-navy'}`}>
+            <Clock size={20} />
+          </div>
           <div className="stat-content">
             <div className="stat-label">Pending Review</div>
-            <div className="stat-value">{pending}</div>
-            <div className="stat-sub">transactions</div>
+            <div className="stat-value" style={{ color: pendingPayments > 0 ? 'var(--warning)' : undefined }}>
+              {pendingPayments}
+            </div>
+            <div className="stat-sub">awaiting admin</div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* ── Tabs ──────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
         {[
-          { id: 'history',  icon: Receipt,         label: 'Transaction History' },
-          { id: 'deposit',  icon: ArrowDownCircle, label: 'Pay Fees' },
-          { id: 'withdraw', icon: ArrowUpCircle,   label: 'Request Refund' },
+          { id: 'overview', icon: Receipt,         label: 'Overview' },
+          { id: 'pay',      icon: ArrowDownCircle, label: 'Pay a Fee' },
+          { id: 'refund',   icon: ArrowUpCircle,   label: 'Request Refund' },
         ].map(({ id, icon: Icon, label }) => (
           <button key={id}
             className={`btn btn-sm ${activeTab === id ? 'btn-primary' : 'btn-outline'}`}
@@ -175,90 +186,117 @@ export default function FeesPage() {
         ))}
       </div>
 
-      {/* Transaction History */}
-      {activeTab === 'history' && (
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title"><Receipt size={16} /> Transaction History</span>
-          </div>
-          {isLoading ? <div className="spinner" /> : (
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th><th>Description</th><th>Type</th>
-                    <th>Amount</th><th>Proof</th><th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data?.transactions?.map((tx) => {
-                    const cfg = statusConfig[tx.status] || statusConfig.pending
-                    const StatusIcon = cfg.icon
-                    return (
-                      <tr key={tx.id}>
-                        <td style={{ color: 'var(--gray-400)', fontSize: '0.8125rem' }}>
-                          {new Date(tx.createdAt).toLocaleDateString()}
-                        </td>
-                        <td>{tx.description}</td>
-                        <td>
-                          <span className={`badge ${tx.type === 'deposit' ? 'badge-success' : 'badge-info'}`}>
-                            {tx.type === 'deposit'
-                              ? <><ArrowDownCircle size={11} /> deposit</>
-                              : <><ArrowUpCircle size={11} /> refund</>}
-                          </span>
-                        </td>
-                        <td style={{ fontWeight: 600, color: tx.type === 'deposit' ? 'var(--success)' : 'var(--danger)' }}>
-                          {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toLocaleString()} RWF
-                        </td>
-                        <td>
-                          {tx.proof?.value ? (
-                            tx.proof.type === 'link' ? (
-                              <a href={tx.proof.value} target="_blank" rel="noreferrer"
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--primary)', fontSize: '0.8125rem' }}>
-                                <Link2 size={13} /> View link
-                              </a>
-                            ) : (
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--gray-500)', fontSize: '0.8125rem' }}>
-                                <FileText size={13} /> File uploaded
-                              </span>
-                            )
-                          ) : (
-                            <span style={{ color: 'var(--gray-300)', fontSize: '0.8125rem' }}>—</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`badge ${cfg.badge}`}>
-                            <StatusIcon size={11} /> {cfg.label}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  {!data?.transactions?.length && (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem' }}>
-                        No transactions yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+      {/* ── Overview tab ──────────────────────────────────────────────────── */}
+      {activeTab === 'overview' && (
+        <>
+          {/* Outstanding charges */}
+          {charges.length > 0 && (
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-header">
+                <span className="card-title"><CreditCard size={15} /> Fees Charged by School</span>
+              </div>
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    {charges.map(tx => {
+                      const cfg = chargeStatusConfig[tx.status] || chargeStatusConfig.pending
+                      const Icon = cfg.icon
+                      return (
+                        <tr key={tx.id}>
+                          <td style={{ fontSize: '0.8125rem', color: 'var(--gray-400)' }}>
+                            {new Date(tx.createdAt).toLocaleDateString()}
+                          </td>
+                          <td style={{ fontWeight: 500 }}>{tx.description}</td>
+                          <td style={{ fontWeight: 700, color: tx.status === 'pending' ? 'var(--danger)' : 'var(--gray-600)' }}>
+                            {tx.amount.toLocaleString()} RWF
+                          </td>
+                          <td>
+                            <span className={`badge ${cfg.badge}`}>
+                              <Icon size={11} /> {cfg.label}
+                            </span>
+                          </td>
+                          <td>
+                            {tx.status === 'pending' && (
+                              <button className="btn btn-danger btn-sm"
+                                onClick={() => {
+                                  setForm({ amount: String(tx.amount), description: `Payment for: ${tx.description}` })
+                                  setActiveTab('pay')
+                                }}>
+                                Pay Now
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
-        </div>
+
+          {/* Payment history */}
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title"><Receipt size={15} /> Payment History</span>
+            </div>
+            {isLoading ? <div className="spinner" /> : (
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr><th>Date</th><th>Description</th><th>Amount</th><th>Proof</th><th>Status</th></tr>
+                  </thead>
+                  <tbody>
+                    {[...payments, ...refunds].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(tx => {
+                      const cfg = statusConfig[tx.status] || statusConfig.pending
+                      const Icon = cfg.icon
+                      return (
+                        <tr key={tx.id}>
+                          <td style={{ fontSize: '0.8125rem', color: 'var(--gray-400)' }}>
+                            {new Date(tx.createdAt).toLocaleDateString()}
+                          </td>
+                          <td>{tx.description}</td>
+                          <td style={{ fontWeight: 600, color: tx.type === 'deposit' ? 'var(--success)' : 'var(--danger)' }}>
+                            {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toLocaleString()} RWF
+                          </td>
+                          <td>
+                            {tx.proof?.value ? (
+                              tx.proof.type === 'link'
+                                ? <a href={tx.proof.value} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontSize: '0.8125rem' }}><Link2 size={13} /> View</a>
+                                : <span style={{ fontSize: '0.8125rem', color: 'var(--gray-500)' }}><FileText size={13} /> File</span>
+                            ) : <span style={{ color: 'var(--gray-300)', fontSize: '0.8125rem' }}>—</span>}
+                          </td>
+                          <td>
+                            <span className={`badge ${cfg.badge}`}><Icon size={11} /> {cfg.label}</span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {payments.length === 0 && refunds.length === 0 && (
+                      <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem' }}>No payment history yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Pay Fees */}
-      {activeTab === 'deposit' && (
+      {/* ── Pay a Fee tab ──────────────────────────────────────────────────── */}
+      {activeTab === 'pay' && (
         <div className="card" style={{ maxWidth: 520 }}>
           <div className="card-header">
-            <span className="card-title"><ArrowDownCircle size={16} /> Make a Payment</span>
+            <span className="card-title"><ArrowDownCircle size={16} /> Submit a Payment</span>
           </div>
           <div className="card-body">
             <div className="alert alert-info" style={{ marginBottom: '1.25rem' }}>
               <FileText size={15} className="alert-icon" />
-              You must attach proof of payment (bank receipt, mobile money screenshot, or payment link).
-              Your balance will be updated after admin verification.
+              Attach proof of payment (bank receipt, mobile money screenshot, or link).
+              Your payment will be verified by the school admin.
             </div>
 
             {msg.text && (
@@ -273,26 +311,18 @@ export default function FeesPage() {
                 <label className="form-label">Amount (RWF) *</label>
                 <input type="number" className="form-input" value={form.amount}
                   onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))}
-                  min="1" required placeholder="e.g. 50000" />
+                  min="1" required placeholder="e.g. 150000" />
               </div>
-
               <div className="form-group">
                 <label className="form-label">Description</label>
                 <input type="text" className="form-input" value={form.description}
                   onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
                   placeholder="e.g. Term 1 tuition fees" />
               </div>
-
-              {/* Proof section */}
               <div className="form-group">
                 <label className="form-label">Payment Proof *</label>
-
-                {/* Toggle */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  {[
-                    { id: 'link', icon: Link2,   label: 'Paste a link' },
-                    { id: 'file', icon: Upload,  label: 'Upload file' },
-                  ].map(({ id, icon: Icon, label }) => (
+                  {[{ id: 'link', icon: Link2, label: 'Paste a link' }, { id: 'file', icon: Upload, label: 'Upload file' }].map(({ id, icon: Icon, label }) => (
                     <button key={id} type="button"
                       className={`btn btn-sm ${proofType === id ? 'btn-navy' : 'btn-outline'}`}
                       onClick={() => { setProofType(id); setProofLink(''); setProofFile(null) }}>
@@ -300,40 +330,19 @@ export default function FeesPage() {
                     </button>
                   ))}
                 </div>
-
                 {proofType === 'link' && (
-                  <div style={{ position: 'relative' }}>
-                    <Link2 size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)', pointerEvents: 'none' }} />
-                    <input type="url" className="form-input" style={{ paddingLeft: '2.25rem' }}
-                      value={proofLink}
-                      onChange={(e) => setProofLink(e.target.value)}
-                      placeholder="https://drive.google.com/... or bank receipt URL"
-                      required
-                    />
-                  </div>
+                  <input type="url" className="form-input" value={proofLink}
+                    onChange={(e) => setProofLink(e.target.value)}
+                    placeholder="https://... bank receipt or mobile money screenshot URL" required />
                 )}
-
                 {proofType === 'file' && (
                   <div>
-                    <div
-                      onClick={() => fileRef.current?.click()}
-                      style={{
-                        border: `2px dashed ${proofFile ? 'var(--success)' : 'var(--gray-200)'}`,
-                        borderRadius: 'var(--radius)',
-                        padding: '1.5rem',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        background: proofFile ? 'var(--success-light)' : 'var(--gray-50)',
-                        transition: 'all 0.15s',
-                      }}
-                    >
+                    <div onClick={() => fileRef.current?.click()}
+                      style={{ border: `2px dashed ${proofFile ? 'var(--success)' : 'var(--gray-200)'}`, borderRadius: 'var(--radius)', padding: '1.5rem', textAlign: 'center', cursor: 'pointer', background: proofFile ? 'var(--success-light)' : 'var(--gray-50)' }}>
                       {proofFile ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--success)' }}>
+                        <div style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                           <FileText size={20} />
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{proofFile.name}</div>
-                            <div style={{ fontSize: '0.75rem' }}>Click to change</div>
-                          </div>
+                          <div><div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{proofFile.name}</div><div style={{ fontSize: '0.75rem' }}>Click to change</div></div>
                         </div>
                       ) : (
                         <div style={{ color: 'var(--gray-400)' }}>
@@ -343,12 +352,10 @@ export default function FeesPage() {
                         </div>
                       )}
                     </div>
-                    <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png"
-                      style={{ display: 'none' }} onChange={handleFileChange} />
+                    <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={handleFileChange} />
                   </div>
                 )}
               </div>
-
               <button type="submit" className="btn btn-success"
                 style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
                 disabled={depositMut.isPending || (proofType === 'link' && !proofLink) || (proofType === 'file' && !proofFile)}>
@@ -359,8 +366,8 @@ export default function FeesPage() {
         </div>
       )}
 
-      {/* Request Refund */}
-      {activeTab === 'withdraw' && (
+      {/* ── Request Refund tab ─────────────────────────────────────────────── */}
+      {activeTab === 'refund' && (
         <div className="card" style={{ maxWidth: 480 }}>
           <div className="card-header">
             <span className="card-title"><ArrowUpCircle size={16} /> Request a Refund</span>
@@ -368,7 +375,7 @@ export default function FeesPage() {
           <div className="card-body">
             <div className="alert alert-info" style={{ marginBottom: '1rem' }}>
               <Clock size={15} className="alert-icon" />
-              Refund requests require admin approval. Your balance will be deducted once approved.
+              Refund requests require admin approval. Only previously approved payments can be refunded.
             </div>
             {msg.text && (
               <div className={`alert alert-${msg.type}`}>
@@ -381,9 +388,9 @@ export default function FeesPage() {
                 <label className="form-label">Amount (RWF) *</label>
                 <input type="number" className="form-input" value={form.amount}
                   onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))}
-                  min="1" max={balance} required placeholder="e.g. 10000" />
+                  min="1" required placeholder="e.g. 10000" />
                 <div style={{ fontSize: '0.75rem', color: 'var(--gray-400)', marginTop: '0.25rem' }}>
-                  Available balance: <strong>{balance.toLocaleString()} RWF</strong>
+                  Total paid: <strong>{totalPaid.toLocaleString()} RWF</strong>
                 </div>
               </div>
               <div className="form-group">
@@ -394,7 +401,7 @@ export default function FeesPage() {
               </div>
               <button type="submit" className="btn btn-danger"
                 style={{ width: '100%', justifyContent: 'center' }}
-                disabled={withdrawMut.isPending || balance <= 0}>
+                disabled={withdrawMut.isPending || totalPaid <= 0}>
                 {withdrawMut.isPending ? 'Submitting…' : 'Submit Refund Request'}
               </button>
             </form>
@@ -404,3 +411,4 @@ export default function FeesPage() {
     </Layout>
   )
 }
+

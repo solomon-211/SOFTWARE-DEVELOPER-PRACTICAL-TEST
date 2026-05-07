@@ -1,5 +1,7 @@
+// Handles device verification management: list pending, verify, and revoke devices.
 const deviceService = require('../services/deviceService');
 
+// GET /api/devices/pending — users with at least one unverified device
 const getPendingDevices = async (req, res, next) => {
   try {
     const data = await deviceService.getPendingDevices();
@@ -9,6 +11,7 @@ const getPendingDevices = async (req, res, next) => {
   }
 };
 
+// PATCH /api/devices/:userId/:deviceId/verify — approve a device for login
 const verifyDevice = async (req, res, next) => {
   try {
     const { userId, deviceId } = req.params;
@@ -19,6 +22,7 @@ const verifyDevice = async (req, res, next) => {
   }
 };
 
+// PATCH /api/devices/:userId/:deviceId/revoke — block a device from login
 const revokeDevice = async (req, res, next) => {
   try {
     const { userId, deviceId } = req.params;
