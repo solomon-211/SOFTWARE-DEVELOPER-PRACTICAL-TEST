@@ -167,12 +167,9 @@ const createStaffMember = async (req, res, next) => {
  * Authorization: Bearer {token}
  */
 const getMe = (req, res) => {
-  const { toAdminUser } = require('../dtos/adminDto');
-  
-  // Return authenticated user from middleware
   res.json({ 
     success: true, 
-    data: toAdminUser(req.user)  // User loaded from JWT token by middleware
+    data: toAdminUser(req.user)
   });
 };
 
