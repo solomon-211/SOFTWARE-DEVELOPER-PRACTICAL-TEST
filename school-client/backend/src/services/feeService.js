@@ -3,10 +3,8 @@ const FeeTransaction = require('../models/FeeTransaction');
 const { toTransaction } = require('../dtos/userDto');
 const { uploadProof } = require('./cloudinaryService');
 
-/**
- * Deposit (fee payment) for a student.
- * Uploads proof to Cloudinary and stores the URL.
- */
+// Submit a deposit (fee payment). Proof of payment is required.
+// Balance is not updated here — admin must approve the transaction first.
 const deposit = async (studentId, amount, description, proof, initiatedBy) => {
   const student = await Student.findById(studentId);
   if (!student) {
@@ -23,7 +21,6 @@ const deposit = async (studentId, amount, description, proof, initiatedBy) => {
 
   let storedProof = proof;
 
-  // If it's a file (base64), upload to Cloudinary and replace with URL
   if (proof.type === 'file' && proof.value.startsWith('data:')) {
     const { url, publicId } = await uploadProof(proof.value, 'fee-proofs');
     storedProof = { type: 'file', value: url, publicId, mimeType: proof.mimeType };
@@ -44,13 +41,8 @@ const deposit = async (studentId, amount, description, proof, initiatedBy) => {
   return toTransaction(tx);
 };
 
-/**
- * Withdraw (refund request) for a student.
- * @param {string} studentId
- * @param {number} amount
- * @param {string} description
- * @param {string} initiatedBy
- */
+// Submit a withdrawal (refund request). Checks balance before creating the transaction.
+// Admin must approve before the balance is actually deducted.
 const withdraw = async (studentId, amount, description, initiatedBy) => {
   const student = await Student.findById(studentId);
   if (!student) {
@@ -79,9 +71,7 @@ const withdraw = async (studentId, amount, description, initiatedBy) => {
   return toTransaction(tx);
 };
 
-/**
- * Get fee balance and transaction history for a student.
- */
+// Get current fee balance and last 50 transactions for a student.
 const getFeeInfo = async (studentId) => {
   const student = await Student.findById(studentId).select('feeBalance');
   if (!student) {
