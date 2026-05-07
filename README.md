@@ -61,8 +61,9 @@ school-management-system/
 │   ├── docker-compose.yml
 │   └── backend/.env.example
 │
-├── API_DOCUMENTATION.md          # Complete API reference
-└── README.md                      # This file
+├── school-admin/README.md        # Admin app specific setup and usage
+├── school-client/README.md       # Client app specific setup and usage
+└── README.md                     # Consolidated project documentation
 ```
 
 ## Key Features
@@ -248,7 +249,10 @@ Admin Password: Admin@1234
 
 ## API Documentation
 
-Complete API documentation with request/response examples is available in [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
+The API is documented in two ways inside this repository:
+
+- Swagger UI on each backend: `/api-docs`
+- Consolidated standards and critical endpoint map in this README
 
 ## API Standards
 
@@ -293,6 +297,43 @@ curl -X POST http://localhost:5001/api/auth/register \
     "role":"parent"
   }'
 ```
+
+### Critical Endpoint Map
+
+These endpoints cover the core submission workflows.
+
+#### Admin API (`http://localhost:5002/api`)
+
+- `POST /auth/login` - Admin/staff login
+- `POST /auth/staff` - Create staff user (admin only)
+- `GET /dashboard` - Dashboard statistics
+- `GET /devices/pending` - List unverified devices
+- `PATCH /devices/:userId/:deviceId/verify` - Verify device
+- `PATCH /devices/:userId/:deviceId/revoke` - Revoke device
+- `GET /students` - List students (teacher/admin scope)
+- `PUT /students/:id/grades` - Update grades
+- `PUT /students/:id/attendance` - Update attendance
+- `POST /students/bulk-attendance` - Bulk attendance
+- `POST /students/:id/send-invite` - Registration invite for auto-linking
+- `GET /classes` - List classes
+- `PATCH /classes/:id/assign-teacher` - Assign teacher to subject
+- `PUT /classes/:id/timetable` - Update timetable
+- `GET /fees` - List fee transactions
+- `PATCH /fees/:txId/process` - Approve/reject fee transaction
+
+#### Client API (`http://localhost:5001/api`)
+
+- `POST /auth/register` - Register parent/student account
+- `POST /auth/login` - Login with device ID
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/logout` - Revoke refresh token
+- `GET /auth/me` - Current profile
+- `GET /fees/:studentId` - Fee balance and history
+- `POST /fees/:studentId/deposit` - Submit payment with proof
+- `POST /fees/:studentId/withdraw` - Request refund
+- `GET /academic/:studentId/grades` - View grades
+- `GET /academic/:studentId/attendance` - View attendance
+- `GET /academic/:studentId/timetable` - View timetable
 
 ## Testing
 
@@ -358,7 +399,10 @@ RATE_LIMIT_MAX=200
 ```env
 MONGO_URI=mongodb://localhost:27017/school_client
 JWT_SECRET=your_secret_key
-JWT_EXPIRES_IN=1d
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=your_refresh_secret_key
+JWT_REFRESH_EXPIRES_IN=7d
+SESSION_IDLE_TIMEOUT_MINUTES=30
 PORT=5001
 NODE_ENV=development
 CLIENT_ORIGIN=http://localhost:3000
@@ -453,6 +497,45 @@ Parent/Student Can View in Dashboard
 Audit Log Tracks Change
 ```
 
+### Invite + Auto-Link Onboarding
+
+```plaintext
+Admin Creates Student Record
+    ↓
+Admin Sends Registration Invite (/api/students/:id/send-invite)
+    ↓
+Parent/Student Opens Invite Link
+    ↓
+Client Registers with inviteToken
+    ↓
+Account Auto-Linked to Student Profile
+    ↓
+Device Still Requires Admin Verification
+```
+
+### Session Inactivity Behavior
+
+```plaintext
+Access Token (short-lived, default 15m)
+    ↓
+Frontend uses refresh cookie at /api/auth/refresh
+    ↓
+Refresh token rotates on each refresh
+    ↓
+If inactive beyond SESSION_IDLE_TIMEOUT_MINUTES, session is revoked
+```
+
+## Demo Flow (Submission)
+
+Use this sequence during demo to show the improved onboarding path:
+
+1. Admin creates a student (`POST /api/students`).
+2. Admin sends invite (`POST /api/students/:id/send-invite`) with parent email.
+3. Parent registers from invite token (`POST /api/auth/register` with `inviteToken`).
+4. Admin verifies device (`PATCH /api/devices/:userId/:deviceId/verify`).
+5. Parent logs in (`POST /api/auth/login`) and views linked child records.
+6. Leave session idle past `SESSION_IDLE_TIMEOUT_MINUTES`, then show refresh failure and re-login.
+
 ## Database Schema Highlights
 
 ### Key Collections
@@ -480,7 +563,7 @@ Error: connect ECONNREFUSED
 Error: Invalid or expired token
 ```
 
-**Solution**: Clear localStorage and log in again
+**Solution**: Log in again. Access token refresh is automatic, but sessions expire after inactivity timeout.
 
 ### Device Not Verified
 
@@ -506,7 +589,7 @@ The project was completed from a near-finished state to full compliance with the
 
 - Added backend `.env.example` files for both applications
 - Added Jest configuration and 26 test cases across authentication, devices, and students
-- Added complete API documentation for admin and client endpoints
+- Added consolidated API documentation for admin and client endpoints
 - Added this consolidated README with setup, architecture, testing, and troubleshooting guidance
 - Added backend documentation comments across core server, middleware, model, service, and controller files
 
@@ -519,11 +602,11 @@ The project was completed from a near-finished state to full compliance with the
 
 ### Documentation Consolidation
 
-Only these markdown files remain as primary documentation:
+Primary documentation is now streamlined to:
 
-- README.md
-- API_DOCUMENTATION.md
-- PROJECT_STRUCTURE.md
+- `README.md` (this consolidated file)
+- `school-admin/README.md` (admin app details)
+- `school-client/README.md` (client app details)
 
 ## Commit Message Convention
 
@@ -551,8 +634,8 @@ This project is part of the Elevanda Ventures Software Developer Practical Test.
 
 For issues or questions:
 
-- Check [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for API details and API patterns
-- Review the testing section in this README for test commands and structure
-- Check individual README.md files in `school-admin/` and `school-client/`
+- Check Swagger docs at `http://localhost:5002/api-docs` and `http://localhost:5001/api-docs`
+- Review the testing and troubleshooting sections in this README
+- Check application-level guides in `school-admin/README.md` and `school-client/README.md`
 
 ---
