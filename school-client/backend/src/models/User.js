@@ -119,6 +119,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean, 
       default: true         // Inactive users cannot log in
     },
+    // Refresh tokens for session renewal (rotating refresh tokens)
+    refreshTokens: [
+      {
+        token: { type: String },
+        createdAt: { type: Date, default: Date.now },
+        lastUsedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { 
     timestamps: true        // Adds createdAt and updatedAt fields
