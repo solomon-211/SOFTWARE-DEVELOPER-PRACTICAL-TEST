@@ -50,7 +50,21 @@ export default function BulkAttendancePage() {
   }
 
   const setStudentStatus = (studentId, status) => {
-    setOverrides(prev => ({ ...prev, [studentId]: status }))
+    setOverrides(prev => {
+      const currentOverride = prev[studentId]
+      // If the chosen status equals the current default, remove any override
+      if (status === defaultStatus) {
+        const { [studentId]: _removed, ...rest } = prev
+        return rest
+      }
+      // Toggle: if the student already has the same override, remove it
+      if (currentOverride === status) {
+        const { [studentId]: _removed, ...rest } = prev
+        return rest
+      }
+      // Otherwise set the override
+      return { ...prev, [studentId]: status }
+    })
   }
 
   const getStudentStatus = (studentId) => overrides[studentId] || defaultStatus
