@@ -2,6 +2,9 @@ const nodemailer = require('nodemailer');
 
 let transporter;
 
+const formatCurrency = (amount) => Number(amount).toLocaleString();
+const buildGreeting = (user) => `Hi ${user.firstName || 'there'}`;
+
 const getTransporter = async () => {
   if (transporter) return transporter;
 
@@ -32,37 +35,56 @@ const sendEmail = async ({ to, subject, html, text }) => {
   return t.sendMail({ from: FROM, to, subject, html, text });
 };
 
+const sendLinkingNotification = (user, subject, html, text) => sendEmail({
+  to: user.email,
+  subject,
+  html,
+  text,
+});
+
 const notify = {
   deviceVerified: (user) => sendEmail({
-    to: user.email, subject: 'Device Verified — SchoolPortal',
-    html: `<p>Hi ${user.firstName}, your device has been verified. You can now log in.</p>`,
-    text: `Hi ${user.firstName}, your device has been verified.`,
+    to: user.email,
+    subject: 'Device Verified — SchoolPortal',
+    html: `<p>${buildGreeting(user)}, your device has been verified. You can now log in.</p>`,
+    text: `${buildGreeting(user)}, your device has been verified.`,
   }),
   paymentApproved: (user, amount) => sendEmail({
-    to: user.email, subject: 'Payment Approved — SchoolPortal',
-    html: `<p>Hi ${user.firstName}, your payment of <strong>${Number(amount).toLocaleString()} RWF</strong> has been approved.</p>`,
-    text: `Payment of ${Number(amount).toLocaleString()} RWF approved.`,
+    to: user.email,
+    subject: 'Payment Approved — SchoolPortal',
+    html: `<p>${buildGreeting(user)}, your payment of <strong>${formatCurrency(amount)} RWF</strong> has been approved.</p>`,
+    text: `Payment of ${formatCurrency(amount)} RWF approved.`,
   }),
   paymentRejected: (user, amount) => sendEmail({
-    to: user.email, subject: 'Payment Rejected — SchoolPortal',
-    html: `<p>Hi ${user.firstName}, your payment of <strong>${Number(amount).toLocaleString()} RWF</strong> was rejected. Contact the school office.</p>`,
-    text: `Payment of ${Number(amount).toLocaleString()} RWF rejected.`,
+    to: user.email,
+    subject: 'Payment Rejected — SchoolPortal',
+    html: `<p>${buildGreeting(user)}, your payment of <strong>${formatCurrency(amount)} RWF</strong> was rejected. Contact the school office.</p>`,
+    text: `Payment of ${formatCurrency(amount)} RWF rejected.`,
   }),
   refundApproved: (user, amount) => sendEmail({
-    to: user.email, subject: 'Refund Approved — SchoolPortal',
-    html: `<p>Hi ${user.firstName}, your refund of <strong>${Number(amount).toLocaleString()} RWF</strong> has been approved.</p>`,
-    text: `Refund of ${Number(amount).toLocaleString()} RWF approved.`,
+    to: user.email,
+    subject: 'Refund Approved — SchoolPortal',
+    html: `<p>${buildGreeting(user)}, your refund of <strong>${formatCurrency(amount)} RWF</strong> has been approved.</p>`,
+    text: `Refund of ${formatCurrency(amount)} RWF approved.`,
   }),
   gradesUpdated: (user, subject, term) => sendEmail({
-    to: user.email, subject: `Grades Updated: ${subject} — SchoolPortal`,
-    html: `<p>Hi ${user.firstName}, grades for <strong>${subject}</strong> (${term}) have been updated.</p>`,
+    to: user.email,
+    subject: `Grades Updated: ${subject} — SchoolPortal`,
+    html: `<p>${buildGreeting(user)}, grades for <strong>${subject}</strong> (${term}) have been updated.</p>`,
     text: `Grades for ${subject} (${term}) updated.`,
   }),
   linkingApproved: (user, studentName) => sendEmail({
-    to: user.email, subject: 'Child Account Linked — SchoolPortal',
-    html: `<p>Hi ${user.firstName}, your account has been linked to <strong>${studentName}</strong>.</p>`,
+    to: user.email,
+    subject: 'Child Account Linked — SchoolPortal',
+    html: `<p>${buildGreeting(user)}, your account has been linked to <strong>${studentName}</strong>.</p>`,
     text: `Account linked to ${studentName}.`,
   }),
+  linkingRejected: (user, studentCode, reason) => sendLinkingNotification(
+    user,
+    'Linking Request Rejected — SchoolPortal',
+    `<p>${buildGreeting(user)}, your linking request for <strong>${studentCode}</strong> was rejected.</p><p><strong>Reason:</strong> ${reason || 'No reason provided.'}</p>`,
+    `Your linking request for ${studentCode} was rejected. Reason: ${reason || 'No reason provided.'}`,
+  ),
   registrationInvite: (email, studentName, inviteUrl, expiresAt) => sendEmail({
     to: email,
     subject: 'Complete Student Account Setup — SchoolPortal',

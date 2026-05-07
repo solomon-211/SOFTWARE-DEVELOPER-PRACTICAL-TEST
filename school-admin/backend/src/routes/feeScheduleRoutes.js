@@ -7,6 +7,7 @@ const validate = require('../middlewares/validate');
 const router = express.Router();
 router.use(protect);
 
+// GET all active fee schedules — visible to all staff
 router.get('/', staffOnly, async (req, res, next) => {
   try {
     const schedules = await FeeSchedule.find({ isActive: true })
@@ -65,6 +66,7 @@ router.put('/:id', adminOnly,
   } catch (err) { next(err); }
 });
 
+// Soft-delete: sets isActive to false rather than removing the record.
 router.delete('/:id', adminOnly, [param('id').isMongoId()], validate, async (req, res, next) => {
   try {
     await FeeSchedule.findByIdAndUpdate(req.params.id, { isActive: false });

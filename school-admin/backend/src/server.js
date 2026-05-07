@@ -1,19 +1,3 @@
-/**
- * ============================================================================
- * SCHOOL ADMIN BACKEND - SERVER ENTRY POINT
- * ============================================================================
- * 
- * Main Express application configuration for the admin portal API.
- * Handles:
- * - Security configuration (Helmet, CORS, rate limiting)
- * - Middleware setup (parsing, logging, authentication)
- * - Route registration for all admin features
- * - Error handling and 404 responses
- * 
- * Environment: Development with nodemon, Production with node
- * Port: Configured via PORT env variable (default: 5002)
- */
-
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
@@ -28,16 +12,16 @@ const swaggerSpec = require('./config/swagger');
 
 const authRoutes          = require('./routes/authRoutes');
 const passwordResetRoutes = require('./routes/passwordResetRoutes');
-const deviceRoutes        = require('./routes/deviceRoutes');        // Device verification
-const studentRoutes       = require('./routes/studentRoutes');       // Student CRUD & grades
-const classRoutes         = require('./routes/classRoutes');         // Class management
-const feeRoutes           = require('./routes/feeRoutes');           // Fee transactions
-const feeScheduleRoutes   = require('./routes/feeScheduleRoutes');   // Fee schedule management
-const dashboardRoutes     = require('./routes/dashboardRoutes');     // Statistics & reporting
-const linkingRoutes       = require('./routes/linkingRoutes');       // Parent-student linking
-const termRoutes          = require('./routes/termRoutes');          // Academic terms
+const deviceRoutes        = require('./routes/deviceRoutes');
+const studentRoutes       = require('./routes/studentRoutes');
+const classRoutes         = require('./routes/classRoutes');
+const feeRoutes           = require('./routes/feeRoutes');
+const feeScheduleRoutes   = require('./routes/feeScheduleRoutes');
+const dashboardRoutes     = require('./routes/dashboardRoutes');
+const linkingRoutes       = require('./routes/linkingRoutes');
+const termRoutes          = require('./routes/termRoutes');
 
-const errorHandler        = require('./middlewares/errorHandler');   // Global error handler
+const errorHandler        = require('./middlewares/errorHandler');
 
 const app = express();
 
@@ -48,10 +32,9 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting protects admin login and high-value operations.
 const limiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,  // 15 minutes
-  max:      Number(process.env.RATE_LIMIT_MAX) || 200,                   // 200 requests
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max:      Number(process.env.RATE_LIMIT_MAX) || 200,
   standardHeaders: true,
   legacyHeaders:   false,
   message: { success: false, message: 'Too many requests, please try again later.' },
@@ -67,7 +50,6 @@ if (process.env.NODE_ENV !== 'test') {
 
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'school-admin-api' }));
 
-// Swagger UI exposes the admin API contract for review and testing.
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'School Admin API Docs',
   customCss: '.swagger-ui .topbar { background-color: #0f172a; }',

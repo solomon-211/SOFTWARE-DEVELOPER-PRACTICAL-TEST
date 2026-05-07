@@ -7,7 +7,7 @@ const validate = require('../middlewares/validate');
 const router = express.Router();
 router.use(protect);
 
-// GET all terms
+// GET all terms — sorted newest first
 router.get('/', async (req, res, next) => {
   try {
     const terms = await AcademicTerm.find({}).sort({ startDate: -1 });
@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET current term
+// GET current term — the one marked isCurrent: true
 router.get('/current', async (req, res, next) => {
   try {
     const term = await AcademicTerm.findOne({ isCurrent: true });
@@ -24,6 +24,7 @@ router.get('/current', async (req, res, next) => {
 });
 
 // POST create term (admin only)
+// Only one term should be marked isCurrent at a time — use PATCH /set-current to switch.
 router.post('/', adminOnly,
   [
     body('name').trim().notEmpty(),
