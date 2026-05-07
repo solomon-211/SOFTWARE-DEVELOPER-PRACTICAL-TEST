@@ -20,6 +20,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 
 const connectDB = require('./config/db');
 
@@ -57,6 +58,7 @@ app.use(limiter);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(cookieParser());
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
