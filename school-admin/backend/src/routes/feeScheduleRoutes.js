@@ -32,7 +32,32 @@ router.post('/', adminOnly,
   }
 );
 
-router.put('/:id', adminOnly, [param('id').isMongoId()], validate, async (req, res, next) => {
+router.put('/:id', adminOnly,
+  [
+    param('id').isMongoId(),
+    body().custom((value) => {
+      const allowed = ['name', 'amount', 'dueDate', 'academicYear', 'term', 'classes', 'description', 'isActive'];
+      const keys = Object.keys(value || {});
+      const invalid = keys.filter((k) => !allowed.includes(k));
+      if (invalid.length) {
+        throw new Error(`Invalid update field(s): ${invalid.join(', ')}`);
+      }
+      if (!keys.length) {
+        throw new Error('At least one field must be provided for update');
+      }
+      return true;
+    }),
+    body('name').optional().trim().notEmpty().isLength({ max: 120 }),
+    body('amount').optional().isFloat({ min: 0 }),
+    body('dueDate').optional().isISO8601().toDate(),
+    body('academicYear').optional().trim().notEmpty().isLength({ max: 50 }),
+    body('term').optional().trim().isLength({ max: 50 }),
+    body('classes').optional().isArray(),
+    body('classes.*').optional().isMongoId(),
+    body('description').optional().trim().isLength({ max: 300 }),
+    body('isActive').optional().isBoolean().toBoolean(),
+  ],
+  validate, async (req, res, next) => {
   try {
     const s = await FeeSchedule.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!s) return res.status(404).json({ success: false, message: 'Schedule not found' });
